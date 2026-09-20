@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Mouse } from "lucide-react"
 
 type item = {
     name: string;
@@ -17,16 +19,39 @@ const navItems: item[] = [
 ]
 
 export default function Navbar() {
+    //dropdown navbar variables
     const [activeMenu, setActiveMenu] = useState<string | null>(null)
+    const navRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (navRef.current && !navRef.current.contains(event.target as Node)) setActiveMenu(null)
+        }
+
+        document.addEventListener("mousedown", handleClickOutside)
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside)
+        }
+    }, [])
+
+
+    const router = useRouter()
 
     return (
         <nav className="fixed top-0 z-50 w-full border-b border-white/10 bg-navbar text-navbar-foreground">
             <div className="flex items-center justify-between px-6 py-3">
-                <p className="text-xl font-semibold tracking-tight cursor-default">
+                <button
+                    onClick={() => router.push("/")}
+                    className="text-xl font-semibold tracking-tight cursor-pointer"
+                >
                     Biz<span className="text-primary">ly</span>
-                </p>
+                </button>
 
-                <div className="flex gap-2 text-white/80 *:hover:text-white *:cursor-pointer">
+                <div
+                    className="flex gap-2 text-white/80 *:hover:text-white *:cursor-pointer"
+                    ref={navRef}
+                >
                     {navItems.map((item) => (
                         <div
                             key={item.name}
@@ -34,7 +59,7 @@ export default function Navbar() {
                         >
                             <button
                                 onClick={() => setActiveMenu(activeMenu === item.name ? null : item.name)}
-                                className={`flex items-center gap-1.5 transition-colors hover:text-white ${activeMenu === item.name ? "text-white" : ""}`}
+                                className={`flex items-center gap-1.5 transition-colors hover:text-white cursor-pointer ${activeMenu === item.name ? "text-white" : ""}`}
                             >
                                 {item.name}
 
@@ -54,7 +79,6 @@ export default function Navbar() {
                                         >
                                             {linkName}
                                         </Link>
-
                                     ))}
                                 </div>
                             )}
