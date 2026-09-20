@@ -1,0 +1,46 @@
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+generator client {
+    provider  = "prisma-client-py"
+    interface = "asyncio"
+}
+
+enum Role {
+    OWNER
+    EMPLOYEE
+}
+
+model Organization {
+    id        String   @id @default(uuid())
+    name      String
+    slug      String   @unique
+    timezone  String   @default("UTC")
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    memberships Membership[]
+}
+
+model User {
+    id        String   @id @default(uuid())
+    email     String   @unique
+    name      String
+    password  String
+    createdAt DateTime @default(now())
+
+    memberships Membership[]
+}
+
+model Membership {
+    id             String       @id @default(uuid())
+    role           Role         @default(EMPLOYEE)
+    userId         String
+    organizationId String
+    user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, organizationId])
+}
