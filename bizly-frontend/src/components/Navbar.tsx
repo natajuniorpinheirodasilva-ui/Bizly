@@ -1,9 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Mouse } from "lucide-react"
 
 type item = {
     name: string;
@@ -35,18 +33,15 @@ export default function Navbar() {
         }
     }, [])
 
-
-    const router = useRouter()
-
     return (
         <nav className="fixed top-0 z-50 w-full border-b border-white/10 bg-navbar text-navbar-foreground">
             <div className="flex items-center justify-between px-6 py-3">
-                <button
-                    onClick={() => router.push("/")}
+                <Link
+                    href="/"
                     className="text-xl font-semibold tracking-tight cursor-pointer"
                 >
                     Biz<span className="text-primary">ly</span>
-                </button>
+                </Link>
 
                 <div
                     className="flex gap-2 text-white/80 *:hover:text-white *:cursor-pointer"
@@ -91,7 +86,7 @@ export default function Navbar() {
                         href="/login"
                         className="cursor-pointer text-navbar-muted transition-colors hover:text-navbar-foreground"
                     >
-                        Login
+                        Log in
                     </Link>
 
                     <Link
