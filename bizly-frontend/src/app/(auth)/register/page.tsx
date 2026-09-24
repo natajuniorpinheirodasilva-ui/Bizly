@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import Footer from "@/components/Footer"
+import FormInput from "@/components/FormInput"
 
 export default function Register() {
     const [seePassword, setSeePassword] = useState<boolean>(false)
@@ -36,13 +37,11 @@ export default function Register() {
                             >
                                 Your Company Name
                             </label>
-                            <input
-                                required
+                            <FormInput
                                 autoComplete="organization"
                                 id="company-name"
                                 type="text"
                                 placeholder="Bizly"
-                                className="w-full rounded-lg border border-border bg-input px-4 py-3 text-base text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
 
@@ -53,13 +52,11 @@ export default function Register() {
                             >
                                 Name
                             </label>
-                            <input
-                                required
+                            <FormInput
                                 autoComplete="name"
                                 id="name"
                                 type="text"
                                 placeholder="John Alex"
-                                className="w-full rounded-lg border border-border bg-input px-4 py-3 text-base text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
 
@@ -70,13 +67,11 @@ export default function Register() {
                             >
                                 Email
                             </label>
-                            <input
+                            <FormInput
                                 autoComplete="email"
-                                required
                                 id="email"
                                 type="email"
                                 placeholder="name@company.com"
-                                className="w-full rounded-lg border border-border bg-input px-4 py-3 text-base text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
 
@@ -88,13 +83,12 @@ export default function Register() {
                                 Password
                             </label>
                             <div className="relative flex items-center">
-                                <input
-                                    required
+                                <FormInput
+
                                     autoComplete="new-password"
                                     id="password"
                                     type={seePassword ? "text" : "password"}
                                     placeholder="••••••••"
-                                    className="w-full rounded-lg border border-border bg-input px-4 py-3 text-base text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 pr-11"
                                 />
 
                                 <button

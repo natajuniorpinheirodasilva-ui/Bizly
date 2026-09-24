@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import Footer from "@/components/Footer"
+import FormInput from "@/components/FormInput"
 
 export default function Login() {
     const [seePassword, setSeePassword] = useState<boolean>(false)
@@ -36,13 +37,11 @@ export default function Login() {
                             >
                                 Email
                             </label>
-                            <input
+                            <FormInput
                                 autoComplete="email"
-                                required
                                 id="email"
                                 type="email"
                                 placeholder="name@company.com"
-                                className="w-full rounded-lg border border-border bg-input px-4 py-3 text-base text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
 
@@ -54,13 +53,11 @@ export default function Login() {
                                 Password
                             </label>
                             <div className="relative flex items-center">
-                                <input
+                                <FormInput
                                     autoComplete="current-password"
-                                    required
                                     id="password"
                                     type={seePassword ? "text" : "password"}
                                     placeholder="••••••••"
-                                    className="w-full rounded-lg border border-border bg-input px-4 py-3 text-base text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 pr-11"
                                 />
 
                                 <button
@@ -85,7 +82,7 @@ export default function Login() {
 
                         <div className="text-center pt-2">
                             <Link
-                                href="/forgot-password"
+                                href="/passwordreset"
                                 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted hover:text-foreground transition-colors"
                             >
                                 Forgot your password?
