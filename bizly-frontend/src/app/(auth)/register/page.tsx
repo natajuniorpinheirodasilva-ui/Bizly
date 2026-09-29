@@ -1,13 +1,59 @@
 'use client'
 
 import Link from "next/link"
-import { Eye, EyeOff } from "lucide-react"
+import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import Footer from "@/components/Footer"
 import FormInput from "@/components/FormInput"
+import { apiFetch } from "@/lib/api"
+import { useRouter } from "next/navigation"
 
 export default function Register() {
-    const [seePassword, setSeePassword] = useState<boolean>(false)
+    const router = useRouter()
+
+    const [seePassword, setSeePassword] = useState(false)
+
+    const [companyName, setCompanyName] = useState<string>("")
+    const [name, setName] = useState<string>("")
+    const [email, setEmail] = useState<string>("")
+    const [password, setPassword] = useState<string>("")
+
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [error, setError] = useState<string | null>(null)
+    const [success, setSuccess] = useState<boolean>(false)
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault()
+        setIsLoading(true)
+        setError(null)
+        setSuccess(false)
+
+        try {
+            const response = await apiFetch("/api/v1/auth/register", {
+                method: "POST",
+                body: JSON.stringify({
+                    company_name: companyName,
+                    name: name,
+                    email: email,
+                    password: password
+                })
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.detail || "An error has occurred.")
+            }
+
+            setSuccess(true)
+            setTimeout(() => router.push("/login"), 1000)
+
+        } catch (err: any) {
+            setError(err.message)
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
     return (
         <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -26,8 +72,21 @@ export default function Register() {
                         Register an account
                     </h1>
 
+                    {error && (
+                        <div className="mb-6 flex items-center gap-2 rounded-lg bg-red-500/10 p-4 text-sm text-red-500 border border-red-500/20">
+                            <AlertCircle className="h-5 w-5" />
+                            <p>{error}</p>
+                        </div>
+                    )}
+                    {success && (
+                        <div className="mb-6 flex items-center gap-2 rounded-lg bg-green-500/10 p-4 text-sm text-green-500 border border-green-500/20">
+                            <CheckCircle2 className="h-5 w-5" />
+                            <p>Account created successfully</p>
+                        </div>
+                    )}
+
                     <form
-                        onSubmit={(e) => e.preventDefault()} // until I integrate FastAPI
+                        onSubmit={handleSubmit}
                         className="flex flex-col gap-5"
                     >
                         <div className="flex flex-col gap-2">
@@ -38,6 +97,8 @@ export default function Register() {
                                 Your Company Name
                             </label>
                             <FormInput
+                                onChange={(e) => setCompanyName(e.target.value)}
+                                value={companyName}
                                 autoComplete="organization"
                                 id="company-name"
                                 type="text"
@@ -53,6 +114,8 @@ export default function Register() {
                                 Name
                             </label>
                             <FormInput
+                                onChange={(e) => setName(e.target.value)}
+                                value={name}
                                 autoComplete="name"
                                 id="name"
                                 type="text"
@@ -68,6 +131,8 @@ export default function Register() {
                                 Email
                             </label>
                             <FormInput
+                                onChange={(e) => setEmail(e.target.value)}
+                                value={email}
                                 autoComplete="email"
                                 id="email"
                                 type="email"
@@ -84,7 +149,8 @@ export default function Register() {
                             </label>
                             <div className="relative flex items-center">
                                 <FormInput
-
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    value={password}
                                     autoComplete="new-password"
                                     id="password"
                                     type={seePassword ? "text" : "password"}
@@ -123,9 +189,10 @@ export default function Register() {
 
                         <button
                             type="submit"
+                            disabled={isLoading}
                             className="mt-2 cursor-pointer rounded-lg bg-primary py-3.5 text-base font-semibold text-white transition-colors hover:bg-primary-hover"
                         >
-                            CREATE ACCOUNT
+                            {isLoading ? "CREATING..." : "CREATE ACCOUNT"}
                         </button>
                     </form>
 

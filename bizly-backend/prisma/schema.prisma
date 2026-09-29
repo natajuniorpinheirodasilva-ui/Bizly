@@ -1,3 +1,12 @@
+generator client {
+    provider = "prisma-client-py"
+}
+
+datasource db {
+    provider = "sqlite"
+    url      = "file:./dev.db"
+}
+
 model Company {
     id             String         @id @default(uuid())
     name           String
@@ -18,7 +27,7 @@ model User {
     name         String
     email        String        @unique
     password     String
-    role         Role          @default(ADMIN)
+    role         String        @default("ADMIN") // change String -> Role and "Admin" -> Admin when migrating to a real db provider
     companyId    String        @map("company_id")
     company      Company       @relation(fields: [companyId], references: [id])
     appointments Appointment[]
@@ -74,7 +83,7 @@ model Appointment {
     id             String   @id @default(uuid())
     startTime      DateTime @map("start_time")
     endTime        DateTime @map("end_time")
-    status         Status   @default(PENDING)
+    status         String   @default("PENDING") // same thing String -> Status and "PENDING" -> PENDING
     priceAtBooking Float    @map("price_at_booking")
 
     companyId String  @map("company_id")
@@ -95,14 +104,15 @@ model Appointment {
     @@map("appointments")
 }
 
-enum Role {
-    ADMIN
-    MEMBER
-}
+// enum Role {
+//     ADMIN
+//     MEMBER
+// }
 
-enum Status {
-    PENDING
-    CONFIRMED
-    CANCELED
-    COMPLETED
-}
+// enum Status {
+//     PENDING
+//     CONFIRMED
+//     CANCELED
+//     COMPLETED
+// }
+// uncomment that when migrating
