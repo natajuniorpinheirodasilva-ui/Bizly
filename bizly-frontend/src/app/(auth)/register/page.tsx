@@ -1,12 +1,13 @@
 'use client'
 
 import Link from "next/link"
-import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react"
+import { CheckCircle2, Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import Footer from "@/components/Footer"
 import FormInput from "@/components/FormInput"
 import { apiFetch } from "@/lib/api"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 export default function Register() {
     const router = useRouter()
@@ -19,13 +20,17 @@ export default function Register() {
     const [password, setPassword] = useState<string>("")
 
     const [isLoading, setIsLoading] = useState<boolean>(false)
-    const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<boolean>(false)
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
+
+        if (!companyName.trim() || !name.trim() || !email.trim() || !password.trim()) {
+            toast.error("Invalid credentials.")
+            return
+        }
+
         setIsLoading(true)
-        setError(null)
         setSuccess(false)
 
         try {
@@ -49,7 +54,7 @@ export default function Register() {
             setTimeout(() => router.push("/login"), 1000)
 
         } catch (err: any) {
-            setError(err.message)
+            toast.error("Unexpected error.")
         } finally {
             setIsLoading(false)
         }
@@ -72,12 +77,6 @@ export default function Register() {
                         Register an account
                     </h1>
 
-                    {error && (
-                        <div className="mb-6 flex items-center gap-2 rounded-lg bg-red-500/10 p-4 text-sm text-red-500 border border-red-500/20">
-                            <AlertCircle className="h-5 w-5" />
-                            <p>{error}</p>
-                        </div>
-                    )}
                     {success && (
                         <div className="mb-6 flex items-center gap-2 rounded-lg bg-green-500/10 p-4 text-sm text-green-500 border border-green-500/20">
                             <CheckCircle2 className="h-5 w-5" />
@@ -190,8 +189,9 @@ export default function Register() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="mt-2 cursor-pointer rounded-lg bg-primary py-3.5 text-base font-semibold text-white transition-colors hover:bg-primary-hover"
-                        >
+                            className={isLoading
+                                ? "mt-2 cursor-not-allowed opacity-70 rounded-lg bg-primary py-3.5 text-base font-semibold text-white transition-colors"
+                                : "mt-2 cursor-pointer rounded-lg bg-primary py-3.5 text-base font-semibold text-white transition-colors hover:bg-primary-hover"}                        >
                             {isLoading ? "CREATING..." : "CREATE ACCOUNT"}
                         </button>
                     </form>

@@ -5,9 +5,54 @@ import { Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import Footer from "@/components/Footer"
 import FormInput from "@/components/FormInput"
+import { apiFetch } from "@/lib/api"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import Cookies from "js-cookie"
+
 
 export default function Login() {
+    const router = useRouter()
+
+    const [email, setEmail] = useState<string>("")
+    const [password, setPassword] = useState<string>("")
     const [seePassword, setSeePassword] = useState<boolean>(false)
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault()
+        if (!email.trim() || !password.trim()) {
+            toast.error("Invalid credentials.")
+
+        }
+
+        setIsLoading(true)
+
+        try {
+            const response = await apiFetch("/api/v1/auth/login", {
+                method: "POST",
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.detail || "An error has ocurred.")
+            }
+
+            Cookies.set("bizly_token", data.access_token, { expires: 7 })
+
+            setTimeout(() => router.push("/"))
+
+        } catch (err: any) {
+            toast.error("Unexpected error.")
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
     return (
         <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -27,7 +72,7 @@ export default function Login() {
                     </h1>
 
                     <form
-                        onSubmit={(e) => e.preventDefault()} // until I integrate FastAPI
+                        onSubmit={handleSubmit}
                         className="flex flex-col gap-5"
                     >
                         <div className="flex flex-col gap-2">
@@ -38,6 +83,8 @@ export default function Login() {
                                 Email
                             </label>
                             <FormInput
+                                onChange={(e) => setEmail(e.target.value)}
+                                value={email}
                                 autoComplete="email"
                                 id="email"
                                 type="email"
@@ -54,6 +101,8 @@ export default function Login() {
                             </label>
                             <div className="relative flex items-center">
                                 <FormInput
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    value={password}
                                     autoComplete="current-password"
                                     id="password"
                                     type={seePassword ? "text" : "password"}
@@ -75,9 +124,12 @@ export default function Login() {
 
                         <button
                             type="submit"
-                            className="mt-2 cursor-pointer rounded-lg bg-primary py-3.5 text-base font-semibold text-white transition-colors hover:bg-primary-hover"
+                            disabled={isLoading}
+                            className={isLoading
+                                ? "mt-2 cursor-not-allowed opacity-70 rounded-lg bg-primary py-3.5 text-base font-semibold text-white transition-colors"
+                                : "mt-2 cursor-pointer rounded-lg bg-primary py-3.5 text-base font-semibold text-white transition-colors hover:bg-primary-hover"}
                         >
-                            LOG IN
+                            {isLoading ? "LOGGING IN" : "LOG IN"}
                         </button>
 
                         <div className="text-center pt-2">

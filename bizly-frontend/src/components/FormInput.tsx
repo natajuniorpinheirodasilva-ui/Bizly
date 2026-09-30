@@ -6,16 +6,17 @@ type Props = {
     placeholder?: string;
     autoComplete?: string;
     value?: string | number;
+    required?: boolean
     onChange?: ChangeEventHandler<HTMLInputElement>;
 }
 
 
-export default function FormInput({ autoComplete, id, type, placeholder, onChange, value }: Props) {
+export default function FormInput({ autoComplete, id, type, placeholder, onChange, value, required }: Props) {
     return (
         <input
             autoComplete={autoComplete}
-            required
             id={id}
+            required={required}
             type={type}
             placeholder={placeholder}
             onChange={onChange}
