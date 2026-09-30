@@ -20,8 +20,14 @@ export default function Navbar() {
     //dropdown navbar variables
     const [activeMenu, setActiveMenu] = useState<string | null>(null)
     const navRef = useRef<HTMLDivElement>(null)
+    const [isLoggedIn, setIsLoggedIn] = useState(false)
 
     useEffect(() => {
+        import("js-cookie").then((Cookies) => {
+            const token = Cookies.default.get("bizly_token")
+            if (token) setIsLoggedIn(true)
+        })
+
         function handleClickOutside(event: MouseEvent) {
             if (navRef.current && !navRef.current.contains(event.target as Node)) setActiveMenu(null)
         }
@@ -82,19 +88,30 @@ export default function Navbar() {
                 </div>
 
                 <div className="flex items-center gap-6">
-                    <Link
-                        href="/login"
-                        className="cursor-pointer text-navbar-muted transition-colors hover:text-navbar-foreground"
-                    >
-                        Log in
-                    </Link>
+                    {isLoggedIn ? (
+                        <Link
+                            href="/dashboard"
+                            className="cursor-pointer rounded-lg bg-primary px-4 py-2 font-medium text-white transition-colors hover:bg-primary-hover"
+                        >
+                            Dashboard
+                        </Link>
+                    ) : (
+                        <>
+                            <Link
+                                href="/login"
+                                className="cursor-pointer text-navbar-muted transition-colors hover:text-navbar-foreground"
+                            >
+                                Log in
+                            </Link>
 
-                    <Link
-                        href="/register"
-                        className="cursor-pointer rounded-lg bg-primary px-4 py-2 font-medium text-white transition-colors hover:bg-primary-hover"
-                    >
-                        Get to Know
-                    </Link>
+                            <Link
+                                href="/register"
+                                className="cursor-pointer rounded-lg bg-primary px-4 py-2 font-medium text-white transition-colors hover:bg-primary-hover"
+                            >
+                                Get to Know
+                            </Link>
+                        </>
+                    )}
                 </div>
             </div>
         </nav>
