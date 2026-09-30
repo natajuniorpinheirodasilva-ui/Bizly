@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-from app.schemas.auth import RegisterRequest
+from app.schemas.auth import RegisterRequest, LoginRequest
 from passlib.context import CryptContext
 from app.db.client import db
 
@@ -40,4 +40,33 @@ async def register(data: RegisterRequest):
 
     return {
         "message": "Account created"
+    }
+
+@router.post("/login")
+async def login(data: LoginRequest):
+
+    user = await db.user.find_unique(where={
+        "email": data.email
+    })
+
+    if not user or not pwd_context.verify(data.password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials"
+        )
+
+    from app.core.security import create_access_token
+    access_token = create_access_token(
+        data={"sub": user.id, "email": user.email, "role": user.role}
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role
+        }
     }
