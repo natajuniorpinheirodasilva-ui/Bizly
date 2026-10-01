@@ -47,7 +47,7 @@ export default function Navbar() {
     function handleLogout() {
         Cookies.remove("bizly_token")
 
-        router.push("/login")
+        router.replace("/login")
         router.refresh()
     }
 

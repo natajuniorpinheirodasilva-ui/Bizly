@@ -18,12 +18,13 @@ export default function Login() {
     const [password, setPassword] = useState<string>("")
     const [seePassword, setSeePassword] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [rememberMe, setRememberMe] = useState<boolean>(false)
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
         if (!email.trim() || !password.trim()) {
             toast.error("Invalid credentials.")
-
+            return
         }
 
         setIsLoading(true)
@@ -43,7 +44,11 @@ export default function Login() {
                 throw new Error(data.detail || "An error has ocurred.")
             }
 
-            Cookies.set("bizly_token", data.access_token, { expires: 7 })
+            if (rememberMe) {
+                Cookies.set("bizly_token", data.access_token, { expires: 7 })
+            } else {
+                Cookies.set("bizly_token", data.access_token)
+            }
 
             setTimeout(() => router.push("/"))
 
@@ -111,14 +116,29 @@ export default function Login() {
 
                                 <button
                                     type="button"
+                                    aria-label={seePassword ? "Hide password" : "Show password"}
                                     onClick={() => setSeePassword(!seePassword)}
                                     className="absolute right-3 text-foreground-muted hover:text-foreground transition-colors cursor-pointer top-1/2 -translate-y-1/2"
                                 >
-
                                     {seePassword ?
                                         <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />
                                     }
                                 </button>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1">
+                                <input
+                                    type="checkbox"
+                                    id="remember"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                    className="w-4 h-4 accent-primary cursor-pointer rounded shrink-0"
+                                />
+                                <label
+                                    htmlFor="remember"
+                                    className="text-sm text-foreground-muted cursor-pointer select-none leading-none"
+                                >
+                                    Remember me
+                                </label>
                             </div>
                         </div>
 
@@ -126,8 +146,8 @@ export default function Login() {
                             type="submit"
                             disabled={isLoading}
                             className={isLoading
-                                ? "mt-2 cursor-not-allowed opacity-70 rounded-lg bg-primary py-3.5 text-base font-semibold text-white transition-colors"
-                                : "mt-2 cursor-pointer rounded-lg bg-primary py-3.5 text-base font-semibold text-white transition-colors hover:bg-primary-hover"}
+                                ? "cursor-not-allowed opacity-70 rounded-lg bg-primary py-3.5 text-base font-semibold text-white transition-colors"
+                                : "cursor-pointer rounded-lg bg-primary py-3.5 text-base font-semibold text-white transition-colors hover:bg-primary-hover"}
                         >
                             {isLoading ? "LOGGING IN" : "LOG IN"}
                         </button>
@@ -149,7 +169,7 @@ export default function Login() {
                                 href="/register"
                                 className="font-semibold text-primary hover:underline"
                             >
-                                Sign up
+                                Register
                             </Link>
                         </p>
                     </div>
