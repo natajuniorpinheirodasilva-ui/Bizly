@@ -26,7 +26,7 @@ export default function Navbar() {
     const navRef = useRef<HTMLDivElement>(null)
     const [isLoggedIn, setIsLoggedIn] = useState(false)
 
-    // session check
+    //session check
     useEffect(() => {
         import("js-cookie").then((Cookies) => {
             const token = Cookies.default.get("bizly_token")
@@ -52,7 +52,7 @@ export default function Navbar() {
     }
 
     return (
-        <nav className="fixed top-0 z-50 w-full border-b border-white/10 bg-navbar text-navbar-foreground">
+        <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-navbar text-navbar-foreground">
             <div className="flex items-center justify-between px-6 py-3">
                 <Link
                     href="/"
