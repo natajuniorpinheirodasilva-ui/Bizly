@@ -26,7 +26,7 @@ export default function Home() {
     },
     {
       question: "Do you offer custom integrations?",
-      answer: "The Professional and Business plans come with access to our REST API. If you need enterprise-level custom integrations, please contact our support team."
+      answer: "The Business plan come with access to our REST API. If you need enterprise-level custom integrations, please contact our support team."
     },
     {
       question: "How does the onboarding process work?",
@@ -47,9 +47,13 @@ export default function Home() {
         {/* hero section */}
         <section className="mx-auto max-w-7xl px-6 pb-24 pt-32 text-center lg:pt-40 relative">
           <h1 className="mx-auto max-w-4xl text-5xl font-bold tracking-tight text-foreground sm:text-7xl">
-            Manage your entire business in <span className="text-primary relative inline-block">
-              one platform
-              <span className="absolute -bottom-2 left-0 w-full h-1 bg-primary/30 rounded-full" />
+            Manage your entire business in{" "}
+            <span className="relative inline-block text-primary">
+              <span className="relative z-10 drop-shadow-[0_0_12px_rgba(37,99,235,0.5)]">
+                one platform
+              </span>
+
+              <span className="absolute -bottom-2 left-0 z-0 h-1 w-full rounded-full bg-primary/30 blur-[2px]" />
             </span>
           </h1>
 
@@ -68,7 +72,7 @@ export default function Home() {
             </Link>
 
             <Link
-              href="/login"
+              href="/login" //implement live demo
               className="group flex items-center gap-2 text-sm font-semibold leading-6 text-foreground transition-all duration-300 hover:text-primary"
             >
               Live demo
@@ -196,7 +200,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* pricing section - leverage strategy */}
+        {/* pricing section, implement features and gateway */}
         <section className="border-t border-border bg-surface py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
 
@@ -377,7 +381,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* interactive faq section */}
+        {/* interactive faq section, implement real FAQ */}
         <section className="border-t border-border bg-background py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
 
@@ -437,7 +441,7 @@ export default function Home() {
                   Ready to upgrade your workflow?
                 </h2>
                 <p className="mt-4 text-lg leading-8 text-foreground-muted">
-                  Join thousands of businesses that trust Bizly to manage their daily operations.
+                  Join Bizly and manage your business.
                 </p>
               </div>
 
