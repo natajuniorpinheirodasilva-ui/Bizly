@@ -82,7 +82,7 @@ export default function Home() {
         </section>
 
         {/* features section */}
-        <section className="border-t border-border/50 bg-surface/50 py-24 sm:py-32 backdrop-blur-sm">
+        <section id="features" className="border-t border-border/50 bg-surface/50 py-24 sm:py-32 backdrop-blur-sm">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
 
             <div className="mx-auto max-w-2xl text-center">
@@ -141,7 +141,7 @@ export default function Home() {
         </section>
 
         {/* how it works section */}
-        <section className="border-t border-border bg-background py-24 sm:py-32 relative overflow-hidden">
+        <section id="how-it-works" className="border-t border-border bg-background py-24 sm:py-32 relative overflow-hidden">
           <div className="mx-auto max-w-7xl px-6 lg:px-8 relative z-10">
 
             <div className="mx-auto max-w-2xl text-center">
@@ -201,7 +201,7 @@ export default function Home() {
         </section>
 
         {/* pricing section, implement features and gateway */}
-        <section className="border-t border-border bg-surface py-24 sm:py-32">
+        <section id="pricing" className="border-t border-border bg-surface py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
 
             <div className="mx-auto max-w-2xl sm:text-center">
@@ -382,7 +382,7 @@ export default function Home() {
         </section>
 
         {/* interactive faq section, implement real FAQ */}
-        <section className="border-t border-border bg-background py-24 sm:py-32">
+        <section id="faq" className="border-t border-border bg-background py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
 
             <div className="mx-auto max-w-2xl text-center">
