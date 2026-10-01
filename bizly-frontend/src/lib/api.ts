@@ -7,7 +7,7 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-  };
+  }
 
   if (typeof window !== "undefined") {
     const token = Cookies.get("bizly_token");
@@ -20,9 +20,9 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
     ...options,
     headers: {
       ...headers,
-      ...options.headers, //
+      ...options.headers,
     },
-  });
+  })
 
   return response;
 }

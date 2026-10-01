@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
+import Cookies from "js-cookie"
+import { useRouter } from "next/navigation"
 
 type item = {
     name: string;
@@ -17,11 +19,14 @@ const navItems: item[] = [
 ]
 
 export default function Navbar() {
+    const router = useRouter()
+
     //dropdown navbar variables
     const [activeMenu, setActiveMenu] = useState<string | null>(null)
     const navRef = useRef<HTMLDivElement>(null)
     const [isLoggedIn, setIsLoggedIn] = useState(false)
 
+    // session check
     useEffect(() => {
         import("js-cookie").then((Cookies) => {
             const token = Cookies.default.get("bizly_token")
@@ -38,6 +43,13 @@ export default function Navbar() {
             document.removeEventListener("mousedown", handleClickOutside)
         }
     }, [])
+
+    function handleLogout() {
+        Cookies.remove("bizly_token")
+
+        router.push("/login")
+        router.refresh()
+    }
 
     return (
         <nav className="fixed top-0 z-50 w-full border-b border-white/10 bg-navbar text-navbar-foreground">
@@ -89,12 +101,21 @@ export default function Navbar() {
 
                 <div className="flex items-center gap-6">
                     {isLoggedIn ? (
-                        <Link
-                            href="/dashboard"
-                            className="cursor-pointer rounded-lg bg-primary px-4 py-2 font-medium text-white transition-colors hover:bg-primary-hover"
-                        >
-                            Dashboard
-                        </Link>
+                        <>
+                            <button
+                                className="cursor-pointer text-navbar-muted transition-colors hover:text-navbar-foreground"
+                                onClick={handleLogout}
+                            >
+                                Log out
+                            </button>
+
+                            <Link
+                                href="/dashboard"
+                                className="cursor-pointer rounded-lg bg-primary px-4 py-2 font-medium text-white transition-colors hover:bg-primary-hover"
+                            >
+                                Dashboard
+                            </Link>
+                        </>
                     ) : (
                         <>
                             <Link
