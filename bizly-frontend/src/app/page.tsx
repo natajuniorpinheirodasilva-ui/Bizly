@@ -438,19 +438,20 @@ export default function Home() {
 
               <div className="max-w-xl text-center lg:text-left">
                 <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                  Ready to upgrade your workflow?
+                  Have any questions?
                 </h2>
                 <p className="mt-4 text-lg leading-8 text-foreground-muted">
-                  Join Bizly and manage your business.
+                  Talk to our support team
                 </p>
               </div>
 
               <div className="flex shrink-0 items-center gap-x-6">
                 <Link
                   href="/register"
-                  className="group rounded-xl bg-primary px-8 py-4 text-base font-bold text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:bg-primary-hover hover:shadow-primary/40 active:scale-95"
+                  className="flex items-center gap-2 group rounded-xl bg-primary px-8 py-4 text-base font-bold text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:bg-primary-hover hover:shadow-primary/40 active:scale-95"
                 >
-                  Create free account
+                  Contact us
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1.5" />
                 </Link>
               </div>
 
