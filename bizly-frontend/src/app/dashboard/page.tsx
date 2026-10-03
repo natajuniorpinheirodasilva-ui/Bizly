@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Users, Calendar, TrendingUp } from "lucide-react"
 import { apiFetch } from "@/lib/api"
+import { toast } from "sonner"
 
 type Stats = {
     total_clients: number
@@ -20,7 +21,7 @@ export default function DashboardHome() {
                 const res = await apiFetch("/api/v1/dashboard/stats")
 
                 if (!res.ok) {
-                    console.error("Falha ao buscar dados")
+                    toast.error("Data error")
                     return
                 }
 
@@ -47,7 +48,6 @@ export default function DashboardHome() {
         },
         {
             label: "Revenue",
-            // Se total_revenue for undefined, ele assume 0 antes de aplicar o toFixed
             value: stats ? `$${(stats.total_revenue || 0).toFixed(2)}` : "—",
             icon: TrendingUp,
         },
