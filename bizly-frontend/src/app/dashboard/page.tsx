@@ -18,29 +18,37 @@ export default function DashboardHome() {
         async function fetchStats() {
             try {
                 const res = await apiFetch("/api/v1/dashboard/stats")
+
+                if (!res.ok) {
+                    console.error("Falha ao buscar dados")
+                    return
+                }
+
                 const data = await res.json()
                 setStats(data)
+            } catch (error) {
+                console.error(error)
             } finally {
                 setIsLoading(false)
             }
         }
         fetchStats()
     }, [])
-
     const statCards = [
         {
             label: "Total Clients",
-            value: stats ? stats.total_clients : "—",
+            value: stats ? (stats.total_clients || 0) : "—",
             icon: Users,
         },
         {
             label: "Appointments",
-            value: stats ? stats.total_appointments : "—",
+            value: stats ? (stats.total_appointments || 0) : "—",
             icon: Calendar,
         },
         {
             label: "Revenue",
-            value: stats ? `$${stats.total_revenue.toFixed(2)}` : "—",
+            // Se total_revenue for undefined, ele assume 0 antes de aplicar o toFixed
+            value: stats ? `$${(stats.total_revenue || 0).toFixed(2)}` : "—",
             icon: TrendingUp,
         },
     ]
