@@ -57,7 +57,7 @@ async def login(data: LoginRequest):
 
     from app.core.security import create_access_token
     access_token = create_access_token(
-        data={"sub": user.id, "email": user.email, "role": user.role}
+        data={"sub": user.id, "email": user.email, "role": user.role, "company_id": user.companyId}
     )
 
     return {
@@ -67,6 +67,7 @@ async def login(data: LoginRequest):
             "id": user.id,
             "name": user.name,
             "email": user.email,
-            "role": user.role
+            "role": user.role,
+            "company_id": user.companyId
         }
     }

@@ -71,7 +71,7 @@ export default function Register() {
                 </Link>
             </nav>
 
-            <main className="flex flex-1 items-center justify-center p-6">
+            <main className="flex flex-1 items-center justify-center p-6 bg-surface/40">
                 <div className="w-full max-w-lg rounded-2xl border border-border bg-surface p-10 shadow-xl">
                     <h1 className="mb-8 text-3xl font-bold tracking-tight text-foreground">
                         Register an account

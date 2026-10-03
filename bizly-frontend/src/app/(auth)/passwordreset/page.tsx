@@ -1,7 +1,6 @@
 'use client'
 
 import Link from "next/link"
-import FormFormInput from "@/components/FormInput"
 import FormInput from "@/components/FormInput"
 
 export default function PasswordReset() {
@@ -16,7 +15,7 @@ export default function PasswordReset() {
                 </Link>
             </nav>
 
-            <main className="flex flex-1 items-center justify-center p-6">
+            <main className="flex flex-1 items-center justify-center p-6 bg-surface/40">
                 <div className="w-full max-w-lg rounded-2xl border border-border bg-surface p-10 shadow-xl">
                     <form
                         className="flex flex-col gap-5"
@@ -33,7 +32,7 @@ export default function PasswordReset() {
                                 autoComplete="email"
                                 id="email"
                                 type="email"
-                                placeholder="Enter the account email"
+                                placeholder="Enter your email account"
                             />
                         </div>
 
