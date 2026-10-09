@@ -11,30 +11,46 @@ type Stats = {
     total_revenue: number
 }
 
+type Appointment = {
+    id: string
+    clientName: string
+    date: string
+    time: string
+    status: string
+}
+
 export default function Dashboard() {
     const [stats, setStats] = useState<Stats | null>(null)
+    const [appointments, setAppointments] = useState<Appointment[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
-        async function fetchStats() {
+        async function fetchDashboardData() {
             try {
-                const res = await apiFetch("/api/v1/dashboard/stats")
+                const [statsRes, appointmentsRes] = await Promise.all([
+                    apiFetch("/api/v1/dashboard/stats"),
+                    apiFetch("/api/v1/appointments")
+                ])
 
-                if (!res.ok) {
-                    toast.error("Data error")
-                    return
+                if (statsRes.ok) {
+                    const statsData = await statsRes.json()
+                    setStats(statsData)
                 }
 
-                const data = await res.json()
-                setStats(data)
+                if (appointmentsRes.ok) {
+                    const appointmentsData = await appointmentsRes.json()
+                    setAppointments(appointmentsData.slice(0, 5))
+                }
             } catch (error) {
                 console.error(error)
+                toast.error("Error loading dashboard data")
             } finally {
                 setIsLoading(false)
             }
         }
-        fetchStats()
+        fetchDashboardData()
     }, [])
+
     const statCards = [
         {
             label: "Total Clients",
@@ -78,11 +94,110 @@ export default function Dashboard() {
                 ))}
             </div>
 
-            <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm min-h-100">
+            <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-foreground mb-4">Recent Activity</h2>
-                <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-border/50 bg-background/50 py-20">
-                    <p className="text-sm text-foreground-muted">Recent appointments will appear here.</p>
-                </div>
+                {isLoading ? (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="border-b border-border bg-background/50">
+                                <tr>
+                                    <th className="px-4 py-3 font-medium text-foreground-muted">
+                                        Client
+                                    </th>
+
+                                    <th className="px-4 py-3 font-medium text-foreground-muted">
+                                        Date
+                                    </th>
+
+                                    <th className="px-4 py-3 font-medium text-foreground-muted">
+                                        Time
+                                    </th>
+
+                                    <th className="px-4 py-3 font-medium text-foreground-muted">
+                                        Status
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border">
+                                {Array.from({ length: 3 }).map((_, i) => (
+                                    <tr key={i} className="animate-pulse">
+                                        <td className="px-4 py-3">
+                                            <div className="h-4 w-28 rounded bg-border" />
+                                        </td>
+
+                                        <td className="px-4 py-3">
+                                            <div className="h-4 w-20 rounded bg-border" />
+                                        </td>
+
+                                        <td className="px-4 py-3">
+                                            <div className="h-4 w-12 rounded bg-border" />
+                                        </td>
+
+                                        <td className="px-4 py-3">
+                                            <div className="h-5 w-16 rounded-full bg-border" />
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : appointments.length === 0 ? (
+                    <div className="flex items-center justify-center rounded-xl border border-dashed border-border/50 bg-background/50 py-12">
+                        <p className="text-sm text-foreground-muted">Recent appointments will appear here.</p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="border-b border-border bg-background/50">
+                                <tr>
+                                    <th className="px-4 py-3 font-medium text-foreground-muted">
+                                        Client
+                                    </th>
+
+                                    <th className="px-4 py-3 font-medium text-foreground-muted">
+                                        Date
+                                    </th>
+
+                                    <th className="px-4 py-3 font-medium text-foreground-muted">
+                                        Time
+                                    </th>
+
+                                    <th className="px-4 py-3 font-medium text-foreground-muted">
+                                        Status
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border">
+                                {appointments.map((item) => (
+                                    <tr key={item.id} className="transition-colors hover:bg-background/50">
+                                        <td className="px-4 py-3 font-medium text-foreground">
+                                            {item.clientName}
+                                        </td>
+
+                                        <td className="px-4 py-3 text-foreground-muted">
+                                            {item.date}
+                                        </td>
+
+                                        <td className="px-4 py-3 text-foreground-muted">
+                                            {item.time}
+                                        </td>
+
+                                        <td className="px-4 py-3">
+                                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${item.status === 'SCHEDULED'
+                                                ? 'border-primary/20 bg-primary/10 text-primary'
+                                                : item.status === 'COMPLETED'
+                                                    ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
+                                                    : 'border-red-500/20 bg-red-500/10 text-red-500'
+                                                }`}>
+                                                {item.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     )
