@@ -1,15 +1,10 @@
 'use client'
 
 import { useEffect, useState } from "react"
-import { Search, Plus, MoreHorizontal, X } from "lucide-react"
+import { Search, Plus, MoreHorizontal, Check, X } from "lucide-react"
 import { apiFetch } from "@/lib/api"
 import { toast } from "sonner"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 
 type Client = {
     id: string
@@ -34,7 +29,8 @@ export default function ClientsPage() {
         phone: ""
     })
 
-    const [editColumn, setEditColumn] = useState<string | null>(null)
+    const [editingClientId, setEditingClientId] = useState<string | null>(null)
+    const [editFormData, setEditFormData] = useState({ name: "", email: "", phone: "", status: "" })
 
     useEffect(() => {
         async function fetchClients() {
@@ -86,6 +82,40 @@ export default function ClientsPage() {
         } finally {
             setIsSubmitting(false)
         }
+    }
+
+    function startEditing(client: Client) {
+        setEditingClientId(client.id)
+        setEditFormData({
+            name: client.name,
+            email: client.email,
+            phone: client.phone,
+            status: client.status
+        })
+    }
+
+    async function saveEdit(id: string) {
+
+        try {
+            const response = await apiFetch(`/api/v1/clients/${id}`, {
+                method: "PUT",
+                body: JSON.stringify(editFormData)
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                toast.error("Unexpected error. Try again later.")
+                return
+            }
+
+            setClients(clients.map(c => (c.id === id ? data : c)))
+            setEditingClientId(null)
+            toast.success("client updated")
+        } catch (err: any) {
+            toast.error("Unexpected error.")
+        }
+
     }
 
     return (
@@ -189,44 +219,106 @@ export default function ClientsPage() {
                             ) : (
                                 // actual data
                                 filteredClients.map((client) => (
-                                    <tr key={client.id} className="transition-colors hover:bg-background/50">
-                                        <td className="px-6 py-4 font-medium capitalize text-foreground">
-                                            {client.name}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-foreground">{client.email}</span>
-                                                <span className="mt-0.5 text-xs text-foreground-muted">{client.phone}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium ${client.status === 'active'
-                                                ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
-                                                : 'border-border bg-zinc-500/10 text-foreground-muted'
-                                                }`}>
-                                                {client.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-foreground-muted">
-                                            {client.created_at}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger className="cursor-pointer inline-flex h-8 w-8 items-center justify-center rounded-lg text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground outline-none focus:ring-2 focus:ring-primary/50">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </DropdownMenuTrigger>
+                                    editingClientId === client.id ? (
+                                        <tr key={client.id} className="bg-background/50">
+                                            <td className="px-6 py-4">
+                                                <input
+                                                    value={editFormData.name}
+                                                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                                                    className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
+                                                />
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-col gap-2">
+                                                    <input
+                                                        value={editFormData.email}
+                                                        onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                                                        className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
+                                                    />
+                                                    <input
+                                                        value={editFormData.phone}
+                                                        onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                                                        className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
+                                                    />
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <select
+                                                    value={editFormData.status}
+                                                    onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                                                    className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
+                                                >
+                                                    <option value="ACTIVE">
+                                                        Active
+                                                    </option>
 
-                                                <DropdownMenuContent align="end" className="w-32">
-                                                    <DropdownMenuItem className="cursor-pointer">
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem className="cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-500/10">
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </td>
-                                    </tr>
+                                                    <option value="INACTIVE">
+                                                        Inactive
+                                                    </option>
+                                                </select>
+                                            </td>
+                                            <td className="px-6 py-4 text-foreground-muted">
+                                                {client.created_at}
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <button
+                                                        onClick={() => saveEdit(client.id)}
+                                                        className="rounded-md bg-emerald-500/10 p-2 text-emerald-500 transition-colors hover:bg-emerald-500/20"
+                                                    >
+                                                        <Check className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setEditingClientId(null)}
+                                                        className="rounded-md bg-red-500/10 p-2 text-red-500 transition-colors hover:bg-red-500/20"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        <tr key={client.id} className="transition-colors hover:bg-background/50">
+                                            <td className="px-6 py-4 font-medium capitalize text-foreground">
+                                                {client.name}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-col">
+                                                    <span className="text-foreground">{client.email}</span>
+                                                    <span className="mt-0.5 text-xs text-foreground-muted">{client.phone}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium ${client.status === 'ACTIVE'
+                                                    ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
+                                                    : 'border-red-500/20 bg-red-500/10 text-red-500'
+                                                    }`}>
+                                                    {client.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-foreground-muted">
+                                                {client.created_at}
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger>
+                                                        <button className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-foreground-muted outline-none transition-colors hover:bg-border hover:text-foreground focus:ring-2 focus:ring-primary/50">
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </button>
+                                                    </DropdownMenuTrigger>
+
+                                                    <DropdownMenuContent align="end" className="w-32">
+                                                        <DropdownMenuItem onClick={() => startEditing(client)} className="cursor-pointer">
+                                                            Edit
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem className="cursor-pointer text-red-500 focus:bg-red-500/10 focus:text-red-500">
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </td>
+                                        </tr>
+                                    )
                                 ))
                             )}
                         </tbody>

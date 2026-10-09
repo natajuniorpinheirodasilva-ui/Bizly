@@ -54,6 +54,7 @@ model Customer {
     name         String
     email        String
     phone        String?
+    status       String        @default("ACTIVE")
     companyId    String        @map("company_id")
     company      Company       @relation(fields: [companyId], references: [id])
     appointments Appointment[]

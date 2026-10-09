@@ -19,6 +19,12 @@ class ClientResponse(BaseModel):
     status: str
     created_at: str
 
+class ClientUpdate(BaseModel):
+    name: str
+    email: str
+    phone: Optional[str] = None
+    status: str
+
 @router.get("", response_model=List[ClientResponse])
 async def get_clients(current_user: dict = Depends(get_current_user)):
     company_id: str | None = current_user.get("company_id")
@@ -37,14 +43,14 @@ async def get_clients(current_user: dict = Depends(get_current_user)):
                 "name": c.name,
                 "email": c.email,
                 "phone": c.phone if c.phone else "n/a",
-                "status": "Active",
+                "status": c.status,
                 "created_at": c.createdAt.strftime("%b %d, %Y").lower() if c.createdAt else "n/a"
             }
             for c in customers
         ]
     except Exception as e:
         print(f"Search error, try again later. ({e})")
-        raise HTTPException(status_code=500, detail="Intern error.")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Intern error.")
 
 @router.post("", response_model=ClientResponse)
 async def create_client(client: ClientCreate, current_user: dict = Depends(get_current_user)):
@@ -67,9 +73,51 @@ async def create_client(client: ClientCreate, current_user: dict = Depends(get_c
             "name": new_customer.name,
             "email": new_customer.email,
             "phone": new_customer.phone if new_customer.phone else "n/a",
-            "status": "Active",
+            "status": new_customer.status,
             "created_at": new_customer.createdAt.strftime("%b %d, %Y").lower() if new_customer.createdAt else "n/a"
         }
     except Exception as e:
         print(f"Create error, try again later: ({e})")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+@router.put("/{client_id}", response_model=ClientResponse)
+async def update_client(client_id: str, client: ClientUpdate, current_user: dict = Depends(get_current_user)):
+    company_id: str | None = current_user.get("company_id")
+    if not company_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token")
+
+    try:
+        existing = await db.customer.find_first(
+            where={
+                "id": client_id,
+                "companyId": company_id
+            }
+        )
+        if not existing:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="client not found")
+
+        updated_customer = await db.customer.update(
+            where={"id": client_id},
+            data={
+                "name": client.name,
+                "email": client.email,
+                "phone": client.phone,
+                "status": client.status
+            }
+        )
+
+        if not updated_customer:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="failed to update client" )
+
+        return {
+            "id": str(updated_customer.id),
+            "name": updated_customer.name,
+            "email": updated_customer.email,
+            "phone": updated_customer.phone if updated_customer.phone else "n/a",
+            "status": updated_customer.status,
+            "created_at": updated_customer.createdAt.strftime("%b %d, %Y").lower() if updated_customer.createdAt else "n/a"
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
