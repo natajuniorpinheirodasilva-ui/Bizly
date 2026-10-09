@@ -137,7 +137,7 @@ async def create_client(client: ClientCreate, current_user: dict = Depends(get_c
             data={
                 "name": client.name,
                 "email": client.email,
-                "phone": client.phone,
+                "phone": client.phone if client.phone else "n/a",
                 "companyId": company_id
             }
         )
@@ -175,7 +175,7 @@ async def update_client(client_id: str, client: ClientUpdate, current_user: dict
             data={
                 "name": client.name,
                 "email": client.email,
-                "phone": client.phone,
+                "phone": client.phone if client.phone else "n/a",
                 "status": client.status
             }
         )
@@ -187,7 +187,7 @@ async def update_client(client_id: str, client: ClientUpdate, current_user: dict
             "id": str(updated_customer.id),
             "name": updated_customer.name,
             "email": updated_customer.email,
-            "phone": updated_customer.phone,
+            "phone": updated_customer.phone if updated_customer.phone else "n/a",
             "status": updated_customer.status,
             "created_at": updated_customer.createdAt.strftime("%b %d, %Y").lower() if updated_customer.createdAt else "n/a"
         }

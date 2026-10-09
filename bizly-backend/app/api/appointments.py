@@ -35,7 +35,6 @@ async def get_appointments(current_user: dict = Depends(get_current_user)):
     try:
         appointments = await db.appointment.find_many(
             where={"companyId": company_id},
-            include={"customer": True},
             order={"startTime": "desc"},
             take=20,
             skip=0
@@ -44,7 +43,7 @@ async def get_appointments(current_user: dict = Depends(get_current_user)):
         return [
             {
                 "id": apt.id,
-                "clientName": apt.customer.name if apt.customer else "Unknown Client",
+                "clientName": apt.clientName,
                 "date": apt.startTime.strftime("%Y-%m-%d"),
                 "time": apt.startTime.strftime("%H:%M"),
                 "status": apt.status
@@ -79,39 +78,22 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
                 }
             )
 
-        customer = await db.customer.find_first(
-            where={
-                "name": data.clientName,
-                "companyId": company_id
-            }
-        )
-        if not customer:
-            clean_email = f"{data.clientName.strip().lower().replace(' ', '.')}@placeholder.bizly"
-            customer = await db.customer.create(
-                data={
-                    "name": data.clientName,
-                    "email": clean_email,
-                    "companyId": company_id
-                }
-            )
-
         new_appointment = await db.appointment.create(
             data=cast(Any, {
+                "clientName": data.clientName,
                 "startTime": start_datetime,
                 "endTime": end_datetime,
                 "status": data.status or "SCHEDULED",
                 "priceAtBooking": service.price,
                 "companyId": company_id,
                 "userId": user_id,
-                "customerId": customer.id,
                 "serviceId": service.id
-            }),
-            include={"customer": True}
+            })
         )
 
         return {
             "id": new_appointment.id,
-            "clientName": new_appointment.customer.name if new_appointment.customer else data.clientName,
+            "clientName": new_appointment.clientName,
             "date": new_appointment.startTime.strftime("%Y-%m-%d"),
             "time": new_appointment.startTime.strftime("%H:%M"),
             "status": new_appointment.status
@@ -133,8 +115,7 @@ async def update_appointment(appointment_id: str, data: AppointmentUpdate, curre
             where={
                 "id": appointment_id,
                 "companyId": company_id
-            },
-            include={"customer": True}
+            }
         )
 
         if not existing:
@@ -143,34 +124,14 @@ async def update_appointment(appointment_id: str, data: AppointmentUpdate, curre
         start_datetime = datetime.strptime(f"{data.date} {data.time}", "%Y-%m-%d %H:%M")
         end_datetime = start_datetime + timedelta(minutes=60)
 
-        customer_id = existing.customerId
-        if data.clientName and (not existing.customer or existing.customer.name != data.clientName):
-            customer = await db.customer.find_first(
-                where={
-                    "name": data.clientName,
-                    "companyId": company_id
-                }
-            )
-            if not customer:
-                clean_email = f"{data.clientName.strip().lower().replace(' ', '.')}@placeholder.bizly"
-                customer = await db.customer.create(
-                    data={
-                        "name": data.clientName,
-                        "email": clean_email,
-                        "companyId": company_id
-                    }
-                )
-            customer_id = customer.id
-
         updated = await db.appointment.update(
             where={"id": appointment_id},
             data=cast(Any, {
+                "clientName": data.clientName if data.clientName else existing.clientName,
                 "startTime": start_datetime,
                 "endTime": end_datetime,
-                "status": data.status or existing.status,
-                "customerId": customer_id
-            }),
-            include={"customer": True}
+                "status": data.status or existing.status
+            })
         )
 
         if not updated:
@@ -178,7 +139,7 @@ async def update_appointment(appointment_id: str, data: AppointmentUpdate, curre
 
         return {
             "id": updated.id,
-            "clientName": updated.customer.name if updated.customer else data.clientName or "Unknown Client",
+            "clientName": updated.clientName,
             "date": updated.startTime.strftime("%Y-%m-%d"),
             "time": updated.startTime.strftime("%H:%M"),
             "status": updated.status

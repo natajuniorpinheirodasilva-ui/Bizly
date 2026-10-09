@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from "react"
-import { Calendar as CalendarIcon, Plus, MoreHorizontal, Check, X, Clock } from "lucide-react"
+import { Calendar as CalendarIcon, Plus, MoreHorizontal, Check, X, Clock, Edit, Trash } from "lucide-react"
 import { apiFetch } from "@/lib/api"
 import { toast } from "sonner"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -194,7 +194,7 @@ export default function SchedulePage() {
                             ) : appointments.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-12 text-center text-foreground-muted">
-                                        no appointments found. click 'new appointment' to start.
+                                        No appointments found. Click 'new appointment' to start.
                                     </td>
                                 </tr>
                             ) : (
@@ -275,9 +275,11 @@ export default function SchedulePage() {
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-32 font-sans">
                                                         <DropdownMenuItem onClick={() => startEditing(item)} className="cursor-pointer">
+                                                            <Edit />
                                                             <span>Edit</span>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => handleDelete(item.id)} className="cursor-pointer text-red-500 focus:bg-red-500/10 focus:text-red-500">
+                                                            <Trash />
                                                             <span>Delete</span>
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
