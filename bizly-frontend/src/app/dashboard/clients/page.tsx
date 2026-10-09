@@ -133,6 +133,25 @@ export default function ClientsPage() {
 
     }
 
+    async function handleDeleteClient(id: string) {
+        try {
+            const response = await apiFetch(`/api/v1/clients/${id}`, {
+                method: "DELETE"
+            })
+
+            if (!response.ok) {
+                const data = await response.json()
+                toast.error(data.detail || "Unexpected error.")
+                return
+            }
+
+            setClients(clients.filter(c => c.id !== id))
+            toast.success("Client deleted.")
+        } catch (err: any) {
+            toast.error("Unexpected error.")
+        }
+    }
+
     return (
         <div className="space-y-6">
             {/* page header */}
@@ -325,7 +344,7 @@ export default function ClientsPage() {
                                                             <Edit />
                                                             <span>Edit</span>
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem className="cursor-pointer text-red-500 focus:bg-red-500/10 focus:text-red-500">
+                                                        <DropdownMenuItem onClick={() => handleDeleteClient(client.id)} className="cursor-pointer text-red-500 focus:bg-red-500/10 focus:text-red-500">
                                                             <Trash />
                                                             <span>Delete</span>
                                                         </DropdownMenuItem>

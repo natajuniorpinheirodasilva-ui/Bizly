@@ -120,3 +120,26 @@ async def update_client(client_id: str, client: ClientUpdate, current_user: dict
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+@router.delete("/{client_id}")
+async def delete_client(client_id: str, current_user: dict = Depends(get_current_user)):
+    company_id: str | None = current_user.get("company_id")
+    if not company_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token")
+
+    try:
+        existing = await db.customer.find_first(
+            where={
+                "id": client_id,
+                "companyId": company_id
+            }
+        )
+        if not existing:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="client not found")
+
+        await db.customer.delete(where={"id": client_id})
+        return {"message": "client deleted successfully"}
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
