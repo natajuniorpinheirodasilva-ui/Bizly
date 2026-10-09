@@ -44,7 +44,7 @@ async def register(data: RegisterRequest):
 
 @router.post("/login")
 async def login(data: LoginRequest):
-
+    
     user = await db.user.find_unique(where={
         "email": data.email
     })
@@ -57,7 +57,12 @@ async def login(data: LoginRequest):
 
     from app.core.security import create_access_token
     access_token = create_access_token(
-        data={"sub": user.id, "email": user.email, "role": user.role, "company_id": user.companyId}
+        data={
+            "sub": user.id,
+            "email": user.email,
+            "role": user.role,
+            "company_id": user.companyId
+        }
     )
 
     return {

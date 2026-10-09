@@ -24,5 +24,10 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
     },
   })
 
+  if (response.status === 401 && typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+    Cookies.remove("bizly_token");
+    window.location.href = "/login";
+  }
+
   return response;
 }

@@ -47,6 +47,10 @@
   /* Fonts */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Shadcn compat */
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
 }
 
 @theme inline {
@@ -92,6 +96,10 @@
   /* Borders */
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
+
+  /* Shadcn compat */
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
 }
 
 body {
@@ -115,5 +123,8 @@ body {
 
     --border: #334155;
     --border-strong: #475569;
+
+    --popover: #1e293b;
+    --popover-foreground: #f8fafc;
   }
 }

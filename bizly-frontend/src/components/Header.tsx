@@ -48,7 +48,7 @@ export default function Header({ setIsOpen }: HeaderProps) {
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
                 >
-                    <User className="h-5 w-5" />
+                    <User className="h-5 w-5 cursor-pointer" />
                 </button>
 
                 {isDropdownOpen && (
@@ -58,7 +58,7 @@ export default function Header({ setIsOpen }: HeaderProps) {
                         </div>
                         <button
                             onClick={handleLogout}
-                            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
                         >
                             <LogOut className="h-4 w-4" />
                             Log out

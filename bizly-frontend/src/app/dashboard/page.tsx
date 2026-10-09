@@ -11,7 +11,7 @@ type Stats = {
     total_revenue: number
 }
 
-export default function DashboardHome() {
+export default function Dashboard() {
     const [stats, setStats] = useState<Stats | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 

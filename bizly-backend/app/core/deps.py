@@ -1,10 +1,7 @@
 import jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import os
-
-SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-key-mudar-depois")
-ALGORITHM = "HS256"
+from app.core.security import SECRET_KEY, ALGORITHM
 
 bearer_scheme = HTTPBearer()
 
