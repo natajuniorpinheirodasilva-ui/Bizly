@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from "react"
-import { Search, Plus, MoreHorizontal, Check, X } from "lucide-react"
+import { Search, Plus, MoreHorizontal, Check, Trash, Edit, X } from "lucide-react"
 import { apiFetch } from "@/lib/api"
 import { toast } from "sonner"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
@@ -94,7 +94,22 @@ export default function ClientsPage() {
         })
     }
 
-    async function saveEdit(id: string) {
+    async function saveEdit(id: string, client: Client) {
+        const hasChanged =
+            editFormData.name !== client.name ||
+            editFormData.email !== client.email ||
+            editFormData.phone !== client.phone ||
+            editFormData.status !== client.status
+
+        if (!hasChanged) {
+            setEditingClientId(null)
+            return
+        }
+
+        if (editFormData.phone === "" && editFormData.email === "") {
+            toast.error("Please keep at least one contact method.")
+            return
+        }
 
         try {
             const response = await apiFetch(`/api/v1/clients/${id}`, {
@@ -111,7 +126,7 @@ export default function ClientsPage() {
 
             setClients(clients.map(c => (c.id === id ? data : c)))
             setEditingClientId(null)
-            toast.success("client updated")
+            toast.success("Client Updated.")
         } catch (err: any) {
             toast.error("Unexpected error.")
         }
@@ -263,7 +278,7 @@ export default function ClientsPage() {
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <button
-                                                        onClick={() => saveEdit(client.id)}
+                                                        onClick={() => saveEdit(client.id, client)}
                                                         className="rounded-md bg-emerald-500/10 p-2 text-emerald-500 transition-colors hover:bg-emerald-500/20"
                                                     >
                                                         <Check className="h-4 w-4" />
@@ -301,18 +316,18 @@ export default function ClientsPage() {
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <DropdownMenu>
-                                                    <DropdownMenuTrigger>
-                                                        <button className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-foreground-muted outline-none transition-colors hover:bg-border hover:text-foreground focus:ring-2 focus:ring-primary/50">
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </button>
+                                                    <DropdownMenuTrigger className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-foreground-muted outline-none transition-colors hover:bg-border hover:text-foreground focus:ring-2 focus:ring-primary/50">
+                                                        <MoreHorizontal className="h-4 w-4" />
                                                     </DropdownMenuTrigger>
 
                                                     <DropdownMenuContent align="end" className="w-32">
                                                         <DropdownMenuItem onClick={() => startEditing(client)} className="cursor-pointer">
-                                                            Edit
+                                                            <Edit />
+                                                            <span>Edit</span>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem className="cursor-pointer text-red-500 focus:bg-red-500/10 focus:text-red-500">
-                                                            Delete
+                                                            <Trash />
+                                                            <span>Delete</span>
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>

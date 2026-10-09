@@ -113,11 +113,10 @@ async def update_client(client_id: str, client: ClientUpdate, current_user: dict
             "id": str(updated_customer.id),
             "name": updated_customer.name,
             "email": updated_customer.email,
-            "phone": updated_customer.phone if updated_customer.phone else "n/a",
+            "phone": updated_customer.phone,
             "status": updated_customer.status,
             "created_at": updated_customer.createdAt.strftime("%b %d, %Y").lower() if updated_customer.createdAt else "n/a"
         }
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    
