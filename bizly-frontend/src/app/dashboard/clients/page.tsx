@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from "react"
-import { Search, Plus, MoreHorizontal, Check, Trash, Edit, X } from "lucide-react"
+import { Search, Plus, MoreHorizontal, Check, Trash, Edit, X, Download } from "lucide-react"
 import { apiFetch } from "@/lib/api"
 import { toast } from "sonner"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
@@ -152,6 +152,28 @@ export default function ClientsPage() {
         }
     }
 
+    async function handleCreatePdf() {
+        try {
+            const response = await apiFetch("/api/v1/clients/export/pdf")
+            if (!response.ok) {
+                toast.error("Failed to generate PDF")
+                return
+            }
+            const blob = await response.blob()
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement("a")
+            a.href = url
+            a.download = "clients-report.pdf"
+            document.body.appendChild(a)
+            a.click()
+            window.URL.revokeObjectURL(url)
+            a.remove()
+            toast.success("PDF downloaded successfully!")
+        } catch (err) {
+            toast.error("Error downloading PDF")
+        }
+    }
+
     return (
         <div className="space-y-6">
             {/* page header */}
@@ -160,20 +182,27 @@ export default function ClientsPage() {
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">
                         Clients
                     </h1>
-
                     <p className="mt-1 text-sm text-foreground-muted">
                         Manage your clients and their information.
                     </p>
                 </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover active:scale-95"
-                >
-                    <Plus className="h-4 w-4" />
-                    Add Client
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={handleCreatePdf}
+                        className="flex items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-background active:scale-95"
+                    >
+                        <Download className="h-4 w-4" />
+                        Export PDF
+                    </button>
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover active:scale-95"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Add Client
+                    </button>
+                </div>
             </div>
-
             {/* toolbar & search */}
             <div className="flex items-center justify-between rounded-xl border border-border bg-surface p-2 shadow-sm">
                 <div className="relative w-full max-w-sm">
@@ -373,7 +402,6 @@ export default function ClientsPage() {
                                 <X className="h-5 w-5" />
                             </button>
                         </div>
-
                         <form onSubmit={handleAddClient} className="p-6">
                             <div className="space-y-4">
                                 <div>
@@ -443,3 +471,4 @@ export default function ClientsPage() {
         </div>
     )
 }
+

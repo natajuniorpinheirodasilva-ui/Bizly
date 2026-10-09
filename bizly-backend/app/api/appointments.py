@@ -36,21 +36,22 @@ async def get_appointments(current_user: dict = Depends(get_current_user)):
         appointments = await db.appointment.find_many(
             where={"companyId": company_id},
             include={"customer": True},
-            order={"startTime": "desc"}
+            order={"startTime": "desc"},
+            take=20,
+            skip=0
         )
 
-        formatted: List[dict] = []
-        for apt in appointments:
-            client_name = apt.customer.name if apt.customer else "Unknown Client"
-            formatted.append({
+        return [
+            {
                 "id": apt.id,
-                "clientName": client_name,
+                "clientName": apt.customer.name if apt.customer else "Unknown Client",
                 "date": apt.startTime.strftime("%Y-%m-%d"),
                 "time": apt.startTime.strftime("%H:%M"),
                 "status": apt.status
-            })
-
-        return formatted
+            }
+            for apt in appointments
+        ]
+    
     except Exception as e:
         print(f"Error fetching appointments: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")

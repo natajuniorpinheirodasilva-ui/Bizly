@@ -42,8 +42,8 @@ export default function Dashboard() {
                     setAppointments(appointmentsData.slice(0, 5))
                 }
             } catch (error) {
-                console.error(error)
                 toast.error("Error loading dashboard data")
+                return
             } finally {
                 setIsLoading(false)
             }

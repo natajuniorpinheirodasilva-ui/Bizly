@@ -1,164 +1,108 @@
-# Bizly
+<!-- HEADER -->
 
-**Bizly** is a full-stack business management SaaS platform built for service-based businesses. It centralizes client management, appointment scheduling, and revenue tracking in a single, clean interface — giving business owners a real-time view of their operations.
+<div align="center">
 
----
+  <img
+    width="100%"
+    src="https://capsule-render.vercel.app/api?type=waving&height=190&color=0:E11D48,45:991B1B,100:09090B&text=Nat%C3%A3%20Junior&fontColor=FFFFFF&fontSize=46&fontAlignY=35&animation=fadeIn&desc=Full-Stack%20Developer&descSize=18&descAlignY=55"
+    alt="Natã Junior — Full-Stack Developer"
+  />
 
-## Screenshots
+  <a href="https://github.com/natajuniorpinheirodasilva-ui">
+    <img
+      src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=500&size=20&duration=3000&pause=900&color=E11D48&center=true&vCenter=true&width=600&height=45&lines=Web+Developer;React+%7C+Next.js+%7C+TypeScript+%7C+Node.js;Building+things+for+the+web.;Always+learning.+Always+improving."
+      alt="Typing animation"
+    />
+  </a>
 
-![Dashboard Overview](bizly-frontend/public/overview.png)
+</div>
 
-![Client Management](bizly-frontend/public/client.png)
+<br>
 
-![Appointment Schedule](bizly-frontend/public/schedule.png)
+I'm a Software Development student at FATEC, focused on building modern web applications and improving my skills through real projects.
 
----
+Currently working mainly with React, Next.js, TypeScript, Node.js and Python, while expanding my knowledge of software architecture, databases and full-stack development.
 
-## Features
+Potfolio: https://portfolio-pi-one-2dyra33666.vercel.app/
+Main Project: https://kanban-mu-woad.vercel.app/
 
-- **Authentication** — JWT-based register/login with "Remember Me" support and automatic token expiry handling
-- **Multi-tenancy** — every resource (clients, appointments, services) is scoped to the authenticated user's company
-- **Dashboard** — real-time stats: total clients, appointments and revenue pulled directly from the database
-- **Client Management** — full CRUD: add, edit, search and delete clients, with unique email constraint per company
-- **Appointment Scheduling** — create, edit and delete appointments with automatic client resolution and service linking
-- **Protected Routes** — all API endpoints require a valid Bearer token, with guard checks at every layer
+<br>
 
----
+<!-- TECH STACK -->
 
-## Tech Stack
+> tech_stack
 
-### Frontend
+<p>
+  <img src="https://img.shields.io/badge/TypeScript-18181B?style=for-the-badge&logo=typescript&logoColor=E11D48" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/JavaScript-18181B?style=for-the-badge&logo=javascript&logoColor=E11D48" alt="JavaScript" />
+  <img src="https://img.shields.io/badge/Python-18181B?style=for-the-badge&logo=python&logoColor=E11D48" alt="Python" />
+  <img src="https://img.shields.io/badge/HTML5-18181B?style=for-the-badge&logo=html5&logoColor=E11D48" alt="HTML5" />
+  <img src="https://img.shields.io/badge/CSS3-18181B?style=for-the-badge&logo=css3&logoColor=E11D48" alt="CSS3" />
+  <img src="https://img.shields.io/badge/React-18181B?style=for-the-badge&logo=react&logoColor=E11D48" alt="React" />
+  <img src="https://img.shields.io/badge/Next.js-18181B?style=for-the-badge&logo=nextdotjs&logoColor=E11D48" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React_Native-18181B?style=for-the-badge&logo=react&logoColor=E11D48" alt="React Native" />
+  <img src="https://img.shields.io/badge/Node.js-18181B?style=for-the-badge&logo=nodedotjs&logoColor=E11D48" alt="Node.js" />
+  <img src="https://img.shields.io/badge/FastAPI-18181B?style=for-the-badge&logo=fastapi&logoColor=E11D48" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Uvicorn-18181B?style=for-the-badge&logo=python&logoColor=E11D48" alt="Uvicorn" />
+  <img src="https://img.shields.io/badge/Pydantic-18181B?style=for-the-badge&logo=pydantic&logoColor=E11D48" alt="Pydantic" />
+  <img src="https://img.shields.io/badge/PyJWT-18181B?style=for-the-badge&logo=jsonwebtokens&logoColor=E11D48" alt="PyJWT" />
+  <img src="https://img.shields.io/badge/Passlib-18181B?style=for-the-badge&logoColor=E11D48" alt="Passlib" />
+  <img src="https://img.shields.io/badge/bcrypt-18181B?style=for-the-badge&logoColor=E11D48" alt="bcrypt" />
+  <img src="https://img.shields.io/badge/Base_UI-18181B?style=for-the-badge&logo=mui&logoColor=E11D48" alt="Base UI" />
+  <img src="https://img.shields.io/badge/Lucide_React-18181B?style=for-the-badge&logo=lucide&logoColor=E11D48" alt="Lucide React" />
+  <img src="https://img.shields.io/badge/Sonner-18181B?style=for-the-badge&logoColor=E11D48" alt="Sonner" />
+  <img src="https://img.shields.io/badge/js--cookie-18181B?style=for-the-badge&logoColor=E11D48" alt="js-cookie" />
+  <img src="https://img.shields.io/badge/Geist-18181B?style=for-the-badge&logo=vercel&logoColor=E11D48" alt="Geist" />
+  <img src="https://img.shields.io/badge/PostgreSQL-18181B?style=for-the-badge&logo=postgresql&logoColor=E11D48" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/MySQL-18181B?style=for-the-badge&logo=mysql&logoColor=E11D48" alt="MySQL" />
+  <img src="https://img.shields.io/badge/SQLite-18181B?style=for-the-badge&logo=sqlite&logoColor=E11D48" alt="SQLite" />
+  <img src="https://img.shields.io/badge/Prisma-18181B?style=for-the-badge&logo=prisma&logoColor=E11D48" alt="Prisma" />
+  <img src="https://img.shields.io/badge/Git-18181B?style=for-the-badge&logo=git&logoColor=E11D48" alt="Git" />
+  <img src="https://img.shields.io/badge/GitHub-18181B?style=for-the-badge&logo=github&logoColor=E11D48" alt="GitHub" />
+  <img src="https://img.shields.io/badge/Vercel-18181B?style=for-the-badge&logo=vercel&logoColor=E11D48" alt="Vercel" />
+  <img src="https://img.shields.io/badge/Figma-18181B?style=for-the-badge&logo=figma&logoColor=E11D48" alt="Figma" />
+  <img src="https://img.shields.io/badge/Webpack-18181B?style=for-the-badge&logo=webpack&logoColor=E11D48" alt="Webpack" />
+</p>
 
-| Technology | Version | Purpose |
-|---|---|---|
-| [Next.js](https://nextjs.org/) | 16.3.5 | React framework with App Router and file-based routing |
-| [React](https://react.dev/) | 19 | UI component model and state management |
-| [TypeScript](https://www.typescriptlang.org/) | 5 | Static typing across all components and API calls |
-| [Tailwind CSS](https://tailwindcss.com/) | 4 | Utility-first styling with CSS custom properties for theming |
-| [Base UI](https://base-ui.com/) | 1.8 | Accessible headless components (dropdown menus, etc.) |
-| [Lucide React](https://lucide.dev/) | 1.47 | Icon library |
-| [Sonner](https://sonner.emilkowal.ski/) | 2 | Toast notifications |
-| [js-cookie](https://github.com/js-cookie/js-cookie) | 3 | Client-side cookie management for auth token storage |
-| [Geist](https://vercel.com/font) | — | Vercel's font for clean UI typography |
+<br>
 
-### Backend
+<!-- CONTACT -->
 
-| Technology | Version | Purpose |
-|---|---|---|
-| [FastAPI](https://fastapi.tiangolo.com/) | 0.141 | Async Python web framework with OpenAPI docs built-in |
-| [Uvicorn](https://www.uvicorn.org/) | 0.53 | ASGI server to run FastAPI |
-| [Prisma Client Python](https://prisma-client-py.readthedocs.io/) | 0.15 | Type-safe ORM for Python, schema-first approach |
-| [SQLite](https://www.sqlite.org/) | — | Lightweight database for development (easily swappable) |
-| [PyJWT](https://pyjwt.readthedocs.io/) | 2.15 | JWT generation and verification for auth |
-| [Passlib + bcrypt](https://passlib.readthedocs.io/) | 1.7 / 3.2 | Secure password hashing |
-| [Pydantic](https://docs.pydantic.dev/) | 2.13 | Request/response validation and data modeling |
+> connect
 
----
+<p>
+  <a href="https://www.linkedin.com/in/natajunior-dev/">
+    <img
+      width="40"
+      height="40"
+      src="https://img.icons8.com/ios-filled/50/E11D48/linkedin.png"
+      alt="LinkedIn"
+    />
+  </a>
 
-## Data Models
+  <a href="https://mail.google.com/mail/?view=cm&fs=1&to=natajuniorpinheirodasilva@gmail.com">
+    <img
+      width="40"
+      height="40"
+      src="https://cdn.simpleicons.org/gmail/E11D48"
+      alt="E-mail"
+    />
+  </a>
 
-```
-Company ──< User
-        ──< Customer
-        ──< Service
-        ──< Appointment >── Customer
-                        >── Service
-                        >── User
-        ──< Availability
-```
+  <a href="https://www.instagram.com/nata.juni0r/">
+    <img
+      width="40"
+      height="40"
+      src="https://cdn.simpleicons.org/instagram/E11D48"
+      alt="Instagram"
+    />
+  </a>
+</p>
 
-Each company is fully isolated. Users, clients, services and appointments all belong to a single company, ensuring data separation between tenants.
+<br>
 
----
-
-## Project Structure
-
-```
-Bizly/
-├── bizly-frontend/          # Next.js application
-│   ├── src/app/
-│   │   ├── (auth)/          # Login & Register pages
-│   │   ├── dashboard/       # Protected dashboard pages
-│   │   │   ├── page.tsx     # Overview with live stats
-│   │   │   ├── clients/     # Client management
-│   │   │   └── schedule/    # Appointment scheduling
-│   │   └── page.tsx         # Landing page
-│   ├── src/components/      # Shared UI components
-│   └── src/lib/api.ts       # Centralized fetch wrapper with auto auth header
-│
-└── bizly-backend/           # FastAPI application
-    ├── app/
-    │   ├── api/             # Route handlers
-    │   │   ├── auth.py      # Register & Login
-    │   │   ├── clients.py   # Client CRUD
-    │   │   ├── appointments.py  # Appointment CRUD
-    │   │   └── dashboard.py # Stats endpoint
-    │   ├── core/
-    │   │   ├── security.py  # JWT creation
-    │   │   └── deps.py      # Auth dependency injection
-    │   └── main.py          # App bootstrap, CORS, router registration
-    └── prisma/
-        └── schema.prisma    # Database schema
-```
-
----
-
-## Getting Started
-
-### Backend
-
-```bash
-cd bizly-backend
-
-# Create and activate virtual environment
-python -m venv venv
-.\venv\Scripts\activate       # Windows
-source venv/bin/activate      # macOS/Linux
-
-# Install dependencies
-pip install fastapi uvicorn prisma passlib bcrypt pyjwt pydantic pydantic-settings
-
-# Generate Prisma client and apply schema
-prisma generate
-prisma db push
-
-# Start the server
-uvicorn app.main:app --reload
-```
-
-### Frontend
-
-```bash
-cd bizly-frontend
-
-# Install dependencies
-npm install
-
-# Create .env.local
-echo "NEXT_PUBLIC_API_URL=http://127.0.0.1:8000" > .env.local
-
-# Start the dev server
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
----
-
-## API Overview
-
-All endpoints are prefixed with `/api/v1`. Protected routes require `Authorization: Bearer <token>`.
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/auth/register` | Create a new company + admin user |
-| `POST` | `/auth/login` | Authenticate and receive JWT |
-| `GET` | `/dashboard/stats` | Live totals: clients, appointments, revenue |
-| `GET` | `/clients` | List all clients for the company |
-| `POST` | `/clients` | Add a new client |
-| `PUT` | `/clients/:id` | Update client details |
-| `DELETE` | `/clients/:id` | Remove a client |
-| `GET` | `/appointments` | List all appointments |
-| `POST` | `/appointments` | Create an appointment |
-| `PUT` | `/appointments/:id` | Edit an appointment |
-| `DELETE` | `/appointments/:id` | Delete an appointment |
+<img
+  width="100%"
+  src="https://capsule-render.vercel.app/api?type=waving&height=100&section=footer&color=0:09090B,55:991B1B,100:E11D48"
+  alt=""
+/>

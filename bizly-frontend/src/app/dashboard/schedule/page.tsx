@@ -134,7 +134,7 @@ export default function SchedulePage() {
             setAppointments(appointments.filter(a => a.id !== id))
             toast.success("appointment deleted")
         } catch (err: any) {
-            toast.error("error deleting appointment")
+            toast.error("Error Deleting Appointment")
         }
     }
 

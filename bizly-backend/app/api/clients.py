@@ -3,6 +3,12 @@ from typing import List, Optional
 from pydantic import BaseModel
 from app.db.client import db 
 from app.core.deps import get_current_user
+from fastapi.responses import StreamingResponse
+import io
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
 
 router = APIRouter(prefix="/clients", tags=["clients"])
 
@@ -24,6 +30,74 @@ class ClientUpdate(BaseModel):
     email: str
     phone: Optional[str] = None
     status: str
+
+@router.get("/export/pdf")
+async def export_clients_pdf(current_user: dict = Depends(get_current_user)):
+    company_id: str | None = current_user.get("company_id")
+    if not company_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload.")
+
+    try:
+        customers = await db.customer.find_many(
+            where={"companyId": company_id},
+            order={"createdAt": "desc"}
+        )
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+        elements = []
+
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'ReportTitle',
+            parent=styles['Heading1'],
+            fontSize=20,
+            textColor=colors.HexColor("#111827"),
+            spaceAfter=15
+        )
+
+        elements.append(Paragraph("Clients Report", title_style))
+        elements.append(Spacer(1, 10))
+
+        table_data = [["Name", "Email", "Phone", "Status", "Added"]]
+        for c in customers:
+            table_data.append([
+                c.name,
+                c.email,
+                c.phone if c.phone else "n/a",
+                c.status,
+                c.createdAt.strftime("%b %d, %Y").lower() if c.createdAt else "n/a"
+            ])
+
+        t = Table(table_data, colWidths=[120, 150, 90, 70, 80])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#F3F4F6")),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor("#374151")),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('TOPPADDING', (0, 0), (-1, 0), 8),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor("#4B5563")),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#F9FAFB")]),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#E5E7EB")),
+        ]))
+
+        elements.append(t)
+        doc.build(elements)
+        buffer.seek(0)
+
+        return StreamingResponse(
+            buffer,
+            media_type="application/pdf",
+            headers={"Content-Disposition": "attachment; filename=clients-report.pdf"}
+        )
+
+    except Exception as e:
+        print(f"PDF export error: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to generate PDF")
 
 @router.get("", response_model=List[ClientResponse])
 async def get_clients(current_user: dict = Depends(get_current_user)):
