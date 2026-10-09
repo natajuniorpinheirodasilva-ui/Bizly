@@ -113,7 +113,7 @@ export default function SchedulePage() {
 
             setAppointments(appointments.map(a => (a.id === id ? data : a)))
             setEditingId(null)
-            toast.success("appointment updated")
+            toast.success("Appointment Updated")
         } catch (err: any) {
             toast.error("error updating appointment")
         }
