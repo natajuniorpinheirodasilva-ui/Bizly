@@ -47,7 +47,7 @@ export default function Register() {
             const data = await response.json()
 
             if (!response.ok) {
-                throw new Error(data.detail || "An error has occurred.")
+                toast.error(data.detail || "An error has occurred.")
             }
 
             setSuccess(true)

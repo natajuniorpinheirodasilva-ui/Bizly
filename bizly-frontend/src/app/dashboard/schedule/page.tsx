@@ -239,14 +239,14 @@ export default function SchedulePage() {
                                                 <div className="flex justify-end gap-2">
                                                     <button
                                                         onClick={() => saveEdit(item.id, item)}
-                                                        className="rounded-md bg-emerald-500/10 p-2 text-emerald-500 transition-colors hover:bg-emerald-500/20"
+                                                        className="rounded-md bg-emerald-500/10 p-2 text-emerald-500 transition-colors hover:bg-emerald-500/20 cursor-pointer"
                                                     >
                                                         <Check className="h-4 w-4" />
                                                     </button>
 
                                                     <button
                                                         onClick={() => setEditingId(null)}
-                                                        className="rounded-md bg-red-500/10 p-2 text-red-500 transition-colors hover:bg-red-500/20"
+                                                        className="rounded-md bg-red-500/10 p-2 text-red-500 transition-colors hover:bg-red-500/20 cursor-pointer"
                                                     >
                                                         <X className="h-4 w-4" />
                                                     </button>

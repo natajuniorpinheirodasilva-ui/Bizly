@@ -189,14 +189,14 @@ export default function ClientsPage() {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={handleCreatePdf}
-                        className="flex items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-background active:scale-95"
+                        className="flex items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-background active:scale-95 cursor-pointer"
                     >
                         <Download className="h-4 w-4" />
                         Export PDF
                     </button>
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover active:scale-95"
+                        className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover active:scale-95 cursor-pointer"
                     >
                         <Plus className="h-4 w-4" />
                         Add Client
@@ -327,13 +327,13 @@ export default function ClientsPage() {
                                                 <div className="flex justify-end gap-2">
                                                     <button
                                                         onClick={() => saveEdit(client.id, client)}
-                                                        className="rounded-md bg-emerald-500/10 p-2 text-emerald-500 transition-colors hover:bg-emerald-500/20"
+                                                        className="rounded-md bg-emerald-500/10 p-2 text-emerald-500 transition-colors hover:bg-emerald-500/20 cursor-pointer"
                                                     >
                                                         <Check className="h-4 w-4" />
                                                     </button>
                                                     <button
                                                         onClick={() => setEditingClientId(null)}
-                                                        className="rounded-md bg-red-500/10 p-2 text-red-500 transition-colors hover:bg-red-500/20"
+                                                        className="rounded-md bg-red-500/10 p-2 text-red-500 transition-colors hover:bg-red-500/20 cursor-pointer"
                                                     >
                                                         <X className="h-4 w-4" />
                                                     </button>
@@ -452,16 +452,16 @@ export default function ClientsPage() {
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
-                                    className="rounded-lg px-4 py-2 text-sm font-medium text-foreground-muted transition-colors hover:bg-border hover:text-foreground"
+                                    className="rounded-lg px-4 py-2 text-sm font-medium text-foreground-muted transition-colors hover:bg-border hover:text-foreground cursor-pointer"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
+                                    className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50 cursor-pointer"
                                 >
-                                    {isSubmitting ? "Saving..." : "Save Client"}
+                                    {isSubmitting ? "Saving..." : "Save"}
                                 </button>
                             </div>
                         </form>
@@ -471,4 +471,3 @@ export default function ClientsPage() {
         </div>
     )
 }
-

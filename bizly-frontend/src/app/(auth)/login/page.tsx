@@ -23,7 +23,7 @@ export default function Login() {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
         if (!email.trim() || !password.trim()) {
-            toast.error("Invalid credentials.")
+            toast.error("Invalid credentials")
             return
         }
 
@@ -40,8 +40,14 @@ export default function Login() {
 
             const data = await response.json()
 
+            if (response.status === 401) {
+                toast.error("Invalid credentials")
+                return
+            }
+
             if (!response.ok) {
-                throw new Error(data.detail || "An error has ocurred.")
+                toast.error(data.detail || "An error has occurred.")
+                return
             }
 
             if (rememberMe) {
@@ -53,7 +59,7 @@ export default function Login() {
             setTimeout(() => router.push("/"))
 
         } catch (err: any) {
-            toast.error("Unexpected error.")
+            toast.error(err?.message || "Unexpected error.")
         } finally {
             setIsLoading(false)
         }
