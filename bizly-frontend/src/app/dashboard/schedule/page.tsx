@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from "react"
-import { Calendar as CalendarIcon, Plus, MoreHorizontal, Check, X, Clock, Edit, Trash } from "lucide-react"
+import { Calendar as CalendarIcon, Plus, MoreHorizontal, Check, X, Clock, Edit, Trash, Download } from "lucide-react"
 import { apiFetch } from "@/lib/api"
 import { toast } from "sonner"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -12,6 +12,32 @@ type Appointment = {
     date: string
     time: string
     status: string
+}
+
+async function handleGeneratePDF() {
+    try {
+        const response = await apiFetch("/api/v1/appointments/export/pdf")
+
+        if (!response.ok) {
+            toast.error("Failed to generate PDF")
+            return
+        }
+
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement("a")
+
+        a.href = url
+        a.download = "appointments-report.pdf"
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        a.remove()
+
+        toast.success("PDF generated successfully")
+    } catch (err: any) {
+        toast.error("Error downloading the document")
+    }
 }
 
 export default function SchedulePage() {
@@ -150,13 +176,24 @@ export default function SchedulePage() {
                         Manage your upcoming appointments and events.
                     </p>
                 </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover active:scale-95"
-                >
-                    <Plus className="h-4 w-4" />
-                    New Appointment
-                </button>
+
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={handleGeneratePDF}
+                        className="flex items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-background active:scale-95 cursor-pointer"
+                    >
+                        <Download className="h-4 w-4" />
+                        Export PDF
+                    </button>
+
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover active:scale-95 cursor-pointer"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Add Client
+                    </button>
+                </div>
             </div>
 
             <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
@@ -317,8 +354,14 @@ export default function SchedulePage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
                     <div className="w-full max-w-md rounded-2xl border border-border bg-surface shadow-2xl">
                         <div className="flex items-center justify-between border-b border-border p-6">
-                            <h2 className="text-xl font-semibold text-foreground">New Appointment</h2>
-                            <button onClick={() => setIsModalOpen(false)} className="text-foreground-muted transition-colors hover:text-foreground">
+                            <h2 className="text-xl font-semibold text-foreground">
+                                New Appointment
+                            </h2>
+
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="text-foreground-muted transition-colors hover:text-foreground"
+                            >
                                 <X className="h-5 w-5" />
                             </button>
                         </div>

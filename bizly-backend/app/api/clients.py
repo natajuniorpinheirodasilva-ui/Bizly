@@ -62,10 +62,10 @@ async def export_clients_pdf(current_user: dict = Depends(get_current_user)):
         table_data = [["Name", "Email", "Phone", "Status", "Added"]]
         for c in customers:
             table_data.append([
-                c.name,
-                c.email,
-                c.phone if c.phone else "n/a",
-                c.status,
+                str(c.name or "n/a"),
+                str(c.email or "n/a"),
+                str(c.phone or "n/a"),
+                str(c.status or "n/a"),
                 c.createdAt.strftime("%b %d, %Y").lower() if c.createdAt else "n/a"
             ])
 

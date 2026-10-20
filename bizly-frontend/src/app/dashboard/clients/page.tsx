@@ -152,25 +152,29 @@ export default function ClientsPage() {
         }
     }
 
-    async function handleCreatePdf() {
+    async function handleGeneratePDF() {
         try {
             const response = await apiFetch("/api/v1/clients/export/pdf")
+
             if (!response.ok) {
                 toast.error("Failed to generate PDF")
                 return
             }
+
             const blob = await response.blob()
             const url = window.URL.createObjectURL(blob)
             const a = document.createElement("a")
+
             a.href = url
             a.download = "clients-report.pdf"
             document.body.appendChild(a)
             a.click()
             window.URL.revokeObjectURL(url)
             a.remove()
-            toast.success("PDF downloaded successfully!")
+
+            toast.success("PDF generated successfully!")
         } catch (err) {
-            toast.error("Error downloading PDF")
+            toast.error("Error downloading the document")
         }
     }
 
@@ -186,14 +190,16 @@ export default function ClientsPage() {
                         Manage your clients and their information.
                     </p>
                 </div>
+
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={handleCreatePdf}
+                        onClick={handleGeneratePDF}
                         className="flex items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-background active:scale-95 cursor-pointer"
                     >
                         <Download className="h-4 w-4" />
                         Export PDF
                     </button>
+
                     <button
                         onClick={() => setIsModalOpen(true)}
                         className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover active:scale-95 cursor-pointer"
