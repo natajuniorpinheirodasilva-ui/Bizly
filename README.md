@@ -116,7 +116,7 @@ python -m venv venv
 source venv/bin/activate      # macOS/Linux
 
 # Install dependencies
-pip install fastapi uvicorn prisma passlib bcrypt pyjwt pydantic pydantic-settings
+pip install -r requirements.txt
 
 # Generate Prisma client and apply schema
 prisma generate

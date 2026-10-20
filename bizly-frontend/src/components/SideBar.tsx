@@ -54,8 +54,8 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                                 href={item.href}
                                 onClick={() => setIsOpen(false)}
                                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isActive
-                                        ? "bg-primary/10 text-primary"
-                                        : "text-foreground-muted hover:bg-surface-hover hover:text-foreground"
+                                    ? "bg-primary/10 text-primary"
+                                    : "text-foreground-muted hover:bg-surface-hover hover:text-foreground"
                                     }`}
                             >
                                 <item.icon className={`h-5 w-5 ${isActive ? "text-primary" : "text-foreground-muted"}`} />

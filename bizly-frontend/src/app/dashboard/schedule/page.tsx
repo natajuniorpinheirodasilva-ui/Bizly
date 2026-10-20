@@ -142,8 +142,13 @@ export default function SchedulePage() {
         <div className="space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Schedule</h1>
-                    <p className="mt-1 text-sm text-foreground-muted">manage your upcoming appointments and events.</p>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                        Schedule
+                    </h1>
+
+                    <p className="mt-1 text-sm text-foreground-muted">
+                        Manage your upcoming appointments and events.
+                    </p>
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
@@ -159,11 +164,25 @@ export default function SchedulePage() {
                     <table className="w-full text-left text-sm">
                         <thead className="border-b border-border bg-background/50">
                             <tr>
-                                <th className="px-6 py-4 font-medium text-foreground-muted">Client</th>
-                                <th className="px-6 py-4 font-medium text-foreground-muted">Date</th>
-                                <th className="px-6 py-4 font-medium text-foreground-muted">Time</th>
-                                <th className="px-6 py-4 font-medium text-foreground-muted">Status</th>
-                                <th className="px-6 py-4 text-right font-medium text-foreground-muted">Actions</th>
+                                <th
+                                    className="px-6 py-4 font-medium text-foreground-muted">
+                                    Client
+                                </th>
+
+                                <th
+                                    className="px-6 py-4 font-medium text-foreground-muted">Date</th>
+                                <th
+                                    className="px-6 py-4 font-medium text-foreground-muted">
+                                    Time
+                                </th>
+
+                                <th className="px-6 py-4 font-medium text-foreground-muted">
+                                    Status
+                                </th>
+
+                                <th className="px-6 py-4 text-right font-medium text-foreground-muted">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">

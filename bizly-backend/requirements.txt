@@ -1,0 +1,23 @@
+# Web framework & ASGI server
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+
+# Database (Prisma ORM)
+prisma>=0.15.0
+
+# Authentication & Security
+passlib[bcrypt]>=1.7.4
+bcrypt==3.2.2
+PyJWT>=2.8.0
+
+# Data validation & Configuration
+pydantic>=2.7.0
+pydantic-settings>=2.2.0
+email-validator>=2.1.0
+
+# PDF Generation
+reportlab>=4.0.0
+
+# Environment management
+python-dotenv>=1.0.0
+
