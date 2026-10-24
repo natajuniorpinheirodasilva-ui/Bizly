@@ -32,12 +32,15 @@ export default function ClientsPage() {
     const [editingClientId, setEditingClientId] = useState<string | null>(null)
     const [editFormData, setEditFormData] = useState({ name: "", email: "", phone: "", status: "" })
 
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false)
+    const [clientToDelete, setClientToDelete] = useState<string | null>(null)
+
     useEffect(() => {
         async function fetchClients() {
             try {
                 const res = await apiFetch("/api/v1/clients")
                 if (!res.ok) {
-                    toast.error("failed to fetch clients")
+                    toast.error("Failed to fetch clients")
                     return
                 }
                 const data = await res.json()
@@ -133,7 +136,14 @@ export default function ClientsPage() {
 
     }
 
+    function waitingConfirmation(id: string) {
+        setClientToDelete(id)
+        setDeleteDialogOpen(true)
+    }
+
     async function handleDeleteClient(id: string) {
+        if (!clientToDelete) return
+
         try {
             const response = await apiFetch(`/api/v1/clients/${id}`, {
                 method: "DELETE"
@@ -179,9 +189,9 @@ export default function ClientsPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <main className="space-y-6">
             {/* page header */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">
                         Clients
@@ -208,7 +218,8 @@ export default function ClientsPage() {
                         Add Client
                     </button>
                 </div>
-            </div>
+            </header>
+
             {/* toolbar & search */}
             <div className="flex items-center justify-between rounded-xl border border-border bg-surface p-2 shadow-sm">
                 <div className="relative w-full max-w-sm">
@@ -226,7 +237,7 @@ export default function ClientsPage() {
             </div>
 
             {/* clients table */}
-            <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+            <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
                         <thead className="border-b border-border bg-background/50">
@@ -374,12 +385,22 @@ export default function ClientsPage() {
                                                         <MoreHorizontal className="h-4 w-4" />
                                                     </DropdownMenuTrigger>
 
-                                                    <DropdownMenuContent align="end" className="w-32">
-                                                        <DropdownMenuItem onClick={() => startEditing(client)} className="cursor-pointer">
+                                                    <DropdownMenuContent
+                                                        align="end"
+                                                        className="w-32"
+                                                    >
+                                                        <DropdownMenuItem
+                                                            onClick={() => startEditing(client)}
+                                                            className="cursor-pointer"
+                                                        >
                                                             <Edit />
                                                             <span>Edit</span>
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => handleDeleteClient(client.id)} className="cursor-pointer text-red-500 focus:bg-red-500/10 focus:text-red-500">
+
+                                                        <DropdownMenuItem
+                                                            onClick={() => waitingConfirmation(client.id)}
+                                                            className="cursor-pointer text-red-500 focus:bg-red-500/10 focus:text-red-500"
+                                                        >
                                                             <Trash />
                                                             <span>Delete</span>
                                                         </DropdownMenuItem>
@@ -393,11 +414,11 @@ export default function ClientsPage() {
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </section>
 
             {/* add client modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+                <section className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
                     <div className="w-full max-w-md rounded-2xl border border-border bg-surface shadow-2xl">
                         <div className="flex items-center justify-between border-b border-border p-6">
                             <h2 className="text-xl font-semibold text-foreground">Add New Client</h2>
@@ -472,8 +493,42 @@ export default function ClientsPage() {
                             </div>
                         </form>
                     </div>
+                </section>
+            )}
+
+            {deleteDialogOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl">
+                        <h3 className="text-lg font-semibold text-foreground">
+                            Are you sure?
+                        </h3>
+
+                        <p className="mt-2 text-sm text-foreground-muted">
+                            This action cannot be undone.
+                        </p>
+
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                onClick={() => {
+                                    clientToDelete && handleDeleteClient(clientToDelete)
+                                    setDeleteDialogOpen(false)
+                                }}
+                                className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-900 active:scale-95 cursor-pointer"
+
+                            >
+                                Yes, I'm sure.
+                            </button>
+
+                            <button
+                                onClick={() => setDeleteDialogOpen(false)}
+                                className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover active:scale-95 cursor-pointer"
+                            >
+                                No, do not delete it.
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
-        </div>
+        </main>
     )
 }

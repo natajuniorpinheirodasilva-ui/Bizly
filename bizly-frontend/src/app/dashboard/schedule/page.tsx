@@ -50,18 +50,21 @@ export default function SchedulePage() {
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editFormData, setEditFormData] = useState({ clientName: "", date: "", time: "", status: "" })
 
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false)
+    const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null)
+
     useEffect(() => {
         async function fetchAppointments() {
             try {
                 const response = await apiFetch("/api/v1/appointments")
                 if (!response.ok) {
-                    toast.error("failed to fetch schedule")
+                    toast.error("Failed to fetch schedule")
                     return
                 }
                 const data = await response.json()
                 setAppointments(data)
             } catch (err: any) {
-                toast.error("something went wrong")
+                toast.error("Something went wrong")
             } finally {
                 setIsLoading(false)
             }
@@ -89,7 +92,7 @@ export default function SchedulePage() {
             setAppointments([data, ...appointments])
             setFormData({ clientName: "", date: "", time: "", status: "SCHEDULED" })
             setIsModalOpen(false)
-            toast.success("Appointment Created")
+            toast.success("Appointment created")
         } catch (err: any) {
             toast.error("Unexpected Error")
         } finally {
@@ -145,7 +148,14 @@ export default function SchedulePage() {
         }
     }
 
-    async function handleDelete(id: string) {
+    function waitingConfirmation(id: string) {
+        setAppointmentToDelete(id)
+        setDeleteDialogOpen(true)
+    }
+
+    async function handleDeleteAppointment(id: string) {
+        if (!appointmentToDelete) return
+
         try {
             const response = await apiFetch(`/api/v1/appointments/${id}`, {
                 method: "DELETE"
@@ -158,15 +168,15 @@ export default function SchedulePage() {
             }
 
             setAppointments(appointments.filter(a => a.id !== id))
-            toast.success("appointment deleted")
+            toast.success("Appointment deleted")
         } catch (err: any) {
             toast.error("Error Deleting Appointment")
         }
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <main className="space-y-6">
+            <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">
                         Schedule
@@ -194,9 +204,9 @@ export default function SchedulePage() {
                         Add Client
                     </button>
                 </div>
-            </div>
+            </header>
 
-            <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+            <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
                         <thead className="border-b border-border bg-background/50">
@@ -329,12 +339,23 @@ export default function SchedulePage() {
                                                     <DropdownMenuTrigger className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-foreground-muted outline-none transition-colors hover:bg-border hover:text-foreground focus:ring-2 focus:ring-primary/50">
                                                         <MoreHorizontal className="h-4 w-4" />
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-32 font-sans">
-                                                        <DropdownMenuItem onClick={() => startEditing(item)} className="cursor-pointer">
+
+                                                    <DropdownMenuContent
+                                                        align="end"
+                                                        className="w-32 font-sans"
+                                                    >
+                                                        <DropdownMenuItem
+                                                            onClick={() => startEditing(item)}
+                                                            className="cursor-pointer"
+                                                        >
                                                             <Edit />
                                                             <span>Edit</span>
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => handleDelete(item.id)} className="cursor-pointer text-red-500 focus:bg-red-500/10 focus:text-red-500">
+
+                                                        <DropdownMenuItem
+                                                            onClick={() => waitingConfirmation(item.id)}
+                                                            className="cursor-pointer text-red-500 focus:bg-red-500/10 focus:text-red-500"
+                                                        >
                                                             <Trash />
                                                             <span>Delete</span>
                                                         </DropdownMenuItem>
@@ -348,7 +369,7 @@ export default function SchedulePage() {
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </section>
 
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
@@ -419,6 +440,41 @@ export default function SchedulePage() {
                     </div>
                 </div>
             )}
-        </div>
+
+            {deleteDialogOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl">
+                        <h3 className="text-lg font-semibold text-foreground">
+                            Are you sure?
+                        </h3>
+
+                        <p className="mt-2 text-sm text-foreground-muted">
+                            This action cannot be undone.
+                        </p>
+
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                onClick={() => {
+                                    appointmentToDelete && handleDeleteAppointment(appointmentToDelete)
+                                    setDeleteDialogOpen(false)
+                                }}
+                                className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-900 active:scale-95 cursor-pointer"
+
+                            >
+                                Yes, I'm sure.
+                            </button>
+
+                            <button
+                                onClick={() => setDeleteDialogOpen(false)}
+                                className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover active:scale-95 cursor-pointer"
+                            >
+                                No, do not delete it.
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+        </main>
     )
 }

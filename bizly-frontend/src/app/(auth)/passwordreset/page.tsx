@@ -1,7 +1,7 @@
 'use client'
 
 import Link from "next/link"
-import FormInput from "@/components/FormInput"
+import FormInput from "@/components/ui/FormInput"
 
 export default function PasswordReset() {
     return (
