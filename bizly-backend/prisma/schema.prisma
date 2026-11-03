@@ -11,6 +11,19 @@ model Company {
     id             String         @id @default(uuid())
     name           String
     slug           String?        @unique
+
+    // business profile
+    email          String?
+    phone          String?
+    address        String?
+    website        String?
+    taxId          String?        @map("tax_id")
+
+    // preferences
+    currency        String        @default("BRL")
+    timezone        String        @default("America/Sao_Paulo")
+    defaultDuration Int           @default(60) @map("default_duration")
+
     users          User[]
     customers      Customer[]
     services       Service[]
@@ -46,6 +59,7 @@ model Availability {
     companyId String  @map("company_id")
     company   Company @relation(fields: [companyId], references: [id])
 
+    @@unique([companyId, dayOfWeek])
     @@map("availabilities")
 }
 
