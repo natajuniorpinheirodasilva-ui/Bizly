@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { Users, Calendar, TrendingUp } from "lucide-react"
 import { apiFetch } from "@/lib/api"
 import { toast } from "sonner"
+import StatusBadge from "./schedule/_components/StatusBadge"
+import type { AppointmentStatus } from "./schedule/_components/types"
 
 type Stats = {
     total_clients: number
@@ -16,7 +18,7 @@ type Appointment = {
     clientName: string
     date: string
     time: string
-    status: string
+    status: AppointmentStatus
 }
 
 export default function Dashboard() {
@@ -41,7 +43,7 @@ export default function Dashboard() {
                     const appointmentsData = await appointmentsRes.json()
                     setAppointments(appointmentsData.slice(0, 5))
                 }
-            } catch (error) {
+            } catch {
                 toast.error("Error loading dashboard data")
                 return
             } finally {
@@ -73,7 +75,7 @@ export default function Dashboard() {
         <div className="space-y-8">
             <div>
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome back</h1>
-                <p className="text-foreground-muted mt-1">Here is what's happening with your business today.</p>
+                <p className="text-foreground-muted mt-1">Here is what&apos;s happening with your business today.</p>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -183,14 +185,7 @@ export default function Dashboard() {
                                         </td>
 
                                         <td className="px-4 py-3">
-                                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${item.status === 'SCHEDULED'
-                                                ? 'border-primary/20 bg-primary/10 text-primary'
-                                                : item.status === 'COMPLETED'
-                                                    ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
-                                                    : 'border-red-500/20 bg-red-500/10 text-red-500'
-                                                }`}>
-                                                {item.status}
-                                            </span>
+                                            <StatusBadge status={item.status} />
                                         </td>
                                     </tr>
                                 ))}

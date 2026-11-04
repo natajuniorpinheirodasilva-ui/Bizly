@@ -56,7 +56,7 @@ export function RevenueExpensesChart({ data, fmt }: { data: Monthly[]; fmt: Fmt 
     return (
         <ChartCard
             title="Revenue vs expenses"
-            subtitle="Per month · cancelled appointments excluded"
+            subtitle="Per month · completed appointments + other income"
             legend={[
                 { label: "Revenue", color: "var(--chart-1)" },
                 { label: "Expenses", color: "var(--chart-2)" },

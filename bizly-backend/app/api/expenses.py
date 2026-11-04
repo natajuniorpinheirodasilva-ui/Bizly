@@ -1,24 +1,17 @@
+"""Manual money entries: expenses (costs) and incomes (revenue outside the schedule)."""
 from datetime import datetime
-from typing import List, Literal
+from typing import Callable, List, Literal
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from app.db.client import db
 from app.core.deps import get_current_user
 from app.api.settings import require_admin
 
-router = APIRouter(prefix="/expenses", tags=["Expenses"])
-
-Category = Literal["RENT", "SALARIES", "SUPPLIES", "MARKETING", "UTILITIES", "TAXES", "OTHER"]
-
-
-class ExpenseInput(BaseModel):
-    description: str = Field(min_length=1, max_length=200)
-    category: Category = "OTHER"
-    amount: float = Field(gt=0)
-    date: str  # YYYY-MM-DD
+ExpenseCategory = Literal["RENT", "SALARIES", "SUPPLIES", "MARKETING", "UTILITIES", "TAXES", "OTHER"]
+IncomeCategory = Literal["SERVICES", "PRODUCTS", "SUBSCRIPTIONS", "OTHER"]
 
 
-class ExpenseResponse(BaseModel):
+class EntryResponse(BaseModel):
     id: str
     description: str
     category: str
@@ -43,58 +36,61 @@ def serialize(e) -> dict:
     }
 
 
-async def get_owned(expense_id: str, company_id: str):
-    expense = await db.expense.find_first(where={"id": expense_id, "companyId": company_id})
-    if not expense:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found.")
-    return expense
+def make_router(prefix: str, label: str, model: Callable, category_type) -> APIRouter:
+    """Same CRUD for expenses and incomes; `model` returns the prisma accessor (db.expense / db.income)."""
+    router = APIRouter(prefix=prefix, tags=[label.title() + "s"])
 
+    class EntryInput(BaseModel):
+        description: str = Field(min_length=1, max_length=200)
+        category: category_type = "OTHER"  # type: ignore[valid-type]
+        amount: float = Field(gt=0)
+        date: str  # YYYY-MM-DD
 
-@router.get("", response_model=List[ExpenseResponse])
-async def list_expenses(current_user: dict = Depends(get_current_user)):
-    company_id = require_admin(current_user)
-    expenses = await db.expense.find_many(
-        where={"companyId": company_id},
-        order={"date": "desc"},
-        take=100,
-    )
-    return [serialize(e) for e in expenses]
+    async def get_owned(entry_id: str, company_id: str):
+        entry = await model().find_first(where={"id": entry_id, "companyId": company_id})
+        if not entry:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{label.title()} not found.")
+        return entry
 
+    @router.get("", response_model=List[EntryResponse])
+    async def list_entries(current_user: dict = Depends(get_current_user)):
+        company_id = require_admin(current_user)
+        entries = await model().find_many(where={"companyId": company_id}, order={"date": "desc"}, take=200)
+        return [serialize(e) for e in entries]
 
-@router.post("", response_model=ExpenseResponse)
-async def create_expense(data: ExpenseInput, current_user: dict = Depends(get_current_user)):
-    company_id = require_admin(current_user)
-    expense = await db.expense.create(
-        data={
+    @router.post("", response_model=EntryResponse)
+    async def create_entry(data: EntryInput, current_user: dict = Depends(get_current_user)):
+        company_id = require_admin(current_user)
+        entry = await model().create(data={
             "description": data.description.strip(),
             "category": data.category,
             "amount": data.amount,
             "date": parse_date(data.date),
             "companyId": company_id,
-        }
-    )
-    return serialize(expense)
+        })
+        return serialize(entry)
 
-
-@router.put("/{expense_id}", response_model=ExpenseResponse)
-async def update_expense(expense_id: str, data: ExpenseInput, current_user: dict = Depends(get_current_user)):
-    company_id = require_admin(current_user)
-    await get_owned(expense_id, company_id)
-    expense = await db.expense.update(
-        where={"id": expense_id},
-        data={
+    @router.put("/{entry_id}", response_model=EntryResponse)
+    async def update_entry(entry_id: str, data: EntryInput, current_user: dict = Depends(get_current_user)):
+        company_id = require_admin(current_user)
+        await get_owned(entry_id, company_id)
+        entry = await model().update(where={"id": entry_id}, data={
             "description": data.description.strip(),
             "category": data.category,
             "amount": data.amount,
             "date": parse_date(data.date),
-        },
-    )
-    return serialize(expense)
+        })
+        return serialize(entry)
+
+    @router.delete("/{entry_id}")
+    async def delete_entry(entry_id: str, current_user: dict = Depends(get_current_user)):
+        company_id = require_admin(current_user)
+        await get_owned(entry_id, company_id)
+        await model().delete(where={"id": entry_id})
+        return {"message": f"{label.title()} deleted."}
+
+    return router
 
 
-@router.delete("/{expense_id}")
-async def delete_expense(expense_id: str, current_user: dict = Depends(get_current_user)):
-    company_id = require_admin(current_user)
-    await get_owned(expense_id, company_id)
-    await db.expense.delete(where={"id": expense_id})
-    return {"message": "Expense deleted."}
+router = make_router("/expenses", "expense", lambda: db.expense, ExpenseCategory)
+income_router = make_router("/incomes", "income", lambda: db.income, IncomeCategory)

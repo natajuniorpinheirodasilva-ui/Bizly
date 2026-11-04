@@ -9,7 +9,7 @@ import {
     RevenueExpensesChart, ProfitChart, ActivityChart, ServicesChart, PeakHoursHeatmap,
     type Monthly, type PeakCell, type ServiceStat,
 } from "./_components/charts"
-import ExpensesCard from "./_components/ExpensesCard"
+import TransactionsCard from "./_components/TransactionsCard"
 
 type Analytics = {
     currency: string
@@ -18,6 +18,9 @@ type Analytics = {
         revenue: number
         expenses: number
         profit: number
+        appointmentRevenue: number
+        manualRevenue: number
+        expectedRevenue: number
         appointments: number
         cancelled: number
         clients: number
@@ -148,15 +151,24 @@ export default function AnalyticsPage() {
                                     : "No revenue in this period yet."}
                             </p>
                         </div>
-                        <StatTile label="Revenue" value={fmt.money(t.revenue)} detail="From non-cancelled appointments" />
-                        <StatTile label="Expenses" value={fmt.money(t.expenses)} detail="Registered below" />
+                        <StatTile
+                            label="Revenue"
+                            value={fmt.money(t.revenue)}
+                            detail={`${fmt.money(t.appointmentRevenue)} completed appointments · ${fmt.money(t.manualRevenue)} other income`}
+                        />
+                        <StatTile
+                            label="Expected"
+                            value={fmt.money(t.expectedRevenue)}
+                            detail="Scheduled and confirmed, not completed yet"
+                        />
                     </section>
 
-                    <section className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+                    <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                        <StatTile label="Expenses" value={fmt.money(t.expenses)} detail="Registered below" />
                         <StatTile
                             label="Appointments"
                             value={fmt.count(t.appointments)}
-                            detail={t.cancelled ? `${t.cancelled} cancelled` : "None cancelled"}
+                            detail={t.cancelled ? `${t.cancelled} cancelled or no-show` : "None cancelled"}
                         />
                         <StatTile
                             label="Clients"
@@ -172,7 +184,7 @@ export default function AnalyticsPage() {
                         <PeakHoursHeatmap data={data.peakHours} />
                         <ActivityChart data={data.monthly} fmt={fmt} />
                         <ServicesChart data={data.byService} fmt={fmt} />
-                        <ExpensesCard money={fmt.money} onChange={reload} />
+                        <TransactionsCard money={fmt.money} onChange={reload} />
                     </section>
                 </>
             )}

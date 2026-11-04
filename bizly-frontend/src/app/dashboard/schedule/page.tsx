@@ -1,480 +1,382 @@
 'use client'
 
-import { useEffect, useState } from "react"
-import { Calendar as CalendarIcon, Plus, MoreHorizontal, Check, X, Clock, Edit, Trash, Download } from "lucide-react"
-import { apiFetch } from "@/lib/api"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { CalendarDays, ChevronLeft, ChevronRight, Download, List, Plus, Search } from "lucide-react"
+import { apiFetch } from "@/lib/api"
+import type { Appointment, AppointmentStatus, BusinessHour, Client, Service } from "./_components/types"
+import { STATUS, STATUS_ORDER, errorMessage, isInactive } from "./_components/types"
+import {
+    addDays, addMonths, daysBetween, endOfMonth, formatDay, fromMinutes, startOfMonth, startOfWeek, toKey, useMounted,
+} from "./_components/dates"
+import CalendarView from "./_components/CalendarView"
+import ListView from "./_components/ListView"
+import AppointmentDetails from "./_components/AppointmentDetails"
+import AppointmentForm, { type FormInitial } from "./_components/AppointmentForm"
 
-type Appointment = {
-    id: string
-    clientName: string
-    date: string
-    time: string
-    status: string
+type View = "calendar" | "list"
+type Range = "day" | "week" | "month"
+
+const VIEW_RANGES: Record<View, Range[]> = { calendar: ["day", "week"], list: ["week", "month"] }
+
+function computeRange(range: Range, anchor: string): [string, string] {
+    if (range === "day") return [anchor, anchor]
+    if (range === "week") {
+        const start = startOfWeek(anchor)
+        return [start, addDays(start, 6)]
+    }
+    return [startOfMonth(anchor), endOfMonth(anchor)]
 }
 
-async function handleGeneratePDF() {
-    try {
-        const response = await apiFetch("/api/v1/appointments/export/pdf")
+function rangeLabel(range: Range, start: string, end: string) {
+    if (range === "day") return formatDay(start, { weekday: "long", month: "long", day: "numeric", year: "numeric" })
+    if (range === "month") return formatDay(start, { month: "long", year: "numeric" })
+    const sameMonth = start.slice(0, 7) === end.slice(0, 7)
+    const from = formatDay(start, { month: "short", day: "numeric" })
+    const to = formatDay(end, sameMonth ? { day: "numeric" } : { month: "short", day: "numeric" })
+    return `${from} – ${to}, ${end.slice(0, 4)}`
+}
 
-        if (!response.ok) {
-            toast.error("Failed to generate PDF")
-            return
-        }
-
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement("a")
-
-        a.href = url
-        a.download = "appointments-report.pdf"
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        a.remove()
-
-        toast.success("PDF generated successfully")
-    } catch (err: any) {
-        toast.error("Error downloading the document")
-    }
+function nextSlot() {
+    const now = new Date()
+    const minutes = Math.ceil((now.getHours() * 60 + now.getMinutes()) / 30) * 30
+    return minutes >= 24 * 60 ? "09:00" : fromMinutes(minutes)
 }
 
 export default function SchedulePage() {
-    const [appointments, setAppointments] = useState<Appointment[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [isModalOpen, setIsModalOpen] = useState(false)
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const [formData, setFormData] = useState({ clientName: "", date: "", time: "", status: "SCHEDULED" })
+    const mounted = useMounted()
 
-    const [editingId, setEditingId] = useState<string | null>(null)
-    const [editFormData, setEditFormData] = useState({ clientName: "", date: "", time: "", status: "" })
+    const [view, setView] = useState<View>("calendar")
+    const [range, setRange] = useState<Range>("week")
+    const [anchor, setAnchor] = useState(() => toKey(new Date()))
+    const [start, end] = computeRange(range, anchor)
+    const rangeKey = `${start}_${end}`
 
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false)
-    const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null)
+    // appointments for the visible range; "loading" = we don't have this range yet
+    const [loaded, setLoaded] = useState<{ key: string; items: Appointment[] } | null>(null)
+    const [reloadKey, setReloadKey] = useState(0)
+    const isLoading = loaded?.key !== rangeKey
 
+    const [clients, setClients] = useState<Client[]>([])
+    const [services, setServices] = useState<Service[]>([])
+    const [hours, setHours] = useState<BusinessHour[]>([])
+    const [company, setCompany] = useState({ currency: "BRL", defaultDuration: 60 })
+
+    const [search, setSearch] = useState("")
+    const [statusFilter, setStatusFilter] = useState<AppointmentStatus | "ALL">("ALL")
+
+    const [form, setForm] = useState<FormInitial | null>(null)
+    const [selected, setSelected] = useState<Appointment | null>(null)
+    const [toDelete, setToDelete] = useState<Appointment | null>(null)
+
+    // reference data, loaded once
     useEffect(() => {
-        async function fetchAppointments() {
+        let ignore = false
+        async function loadReference() {
             try {
-                const response = await apiFetch("/api/v1/appointments")
-                if (!response.ok) {
-                    toast.error("Failed to fetch schedule")
-                    return
+                const [c, s, h, co] = await Promise.all([
+                    apiFetch("/api/v1/clients"),
+                    apiFetch("/api/v1/services"),
+                    apiFetch("/api/v1/settings/hours"),
+                    apiFetch("/api/v1/settings/company"),
+                ])
+                if (ignore) return
+                if (c.ok) setClients(await c.json())
+                if (s.ok) setServices(await s.json())
+                if (h.ok) setHours(await h.json())
+                if (co.ok) {
+                    const data = await co.json()
+                    setCompany({ currency: data.currency, defaultDuration: data.defaultDuration })
                 }
-                const data = await response.json()
-                setAppointments(data)
-            } catch (err: any) {
-                toast.error("Something went wrong")
-            } finally {
-                setIsLoading(false)
+            } catch {
+                if (!ignore) toast.error("Failed to load clients and services.")
             }
         }
-        fetchAppointments()
+        loadReference()
+        return () => { ignore = true }
     }, [])
 
-    async function handleAdd(e: React.FormEvent) {
-        e.preventDefault()
-        setIsSubmitting(true)
+    // appointments for the current range
+    useEffect(() => {
+        let ignore = false
+        async function loadAppointments() {
+            try {
+                const res = await apiFetch(`/api/v1/appointments?start=${start}&end=${end}`)
+                const data = await res.json()
+                if (ignore) return
+                if (!res.ok) {
+                    toast.error(errorMessage(data, "Failed to load the schedule."))
+                    setLoaded({ key: `${start}_${end}`, items: [] })
+                    return
+                }
+                setLoaded({ key: `${start}_${end}`, items: data })
+            } catch {
+                if (!ignore) toast.error("Failed to load the schedule.")
+            }
+        }
+        loadAppointments()
+        return () => { ignore = true }
+    }, [start, end, reloadKey])
 
+    const money = useMemo(() => {
+        const f = new Intl.NumberFormat("en-US", { style: "currency", currency: company.currency })
+        return (v: number) => f.format(v)
+    }, [company.currency])
+
+    const appointments = useMemo(() => (isLoading ? [] : loaded?.items ?? []), [isLoading, loaded])
+
+    const filtered = useMemo(() => {
+        const q = search.trim().toLowerCase()
+        return appointments.filter(a =>
+            (statusFilter === "ALL" || a.status === statusFilter) &&
+            (!q || a.clientName.toLowerCase().includes(q) || a.serviceName.toLowerCase().includes(q))
+        )
+    }, [appointments, search, statusFilter])
+
+    const summary = useMemo(() => {
+        const active = appointments.filter(a => !isInactive(a.status))
+        return {
+            count: active.length,
+            expected: active.filter(a => a.status !== "COMPLETED").reduce((s, a) => s + a.price, 0),
+            completed: active.filter(a => a.status === "COMPLETED").reduce((s, a) => s + a.price, 0),
+        }
+    }, [appointments])
+
+    const replaceLocal = useCallback((apt: Appointment) => {
+        setLoaded(prev => prev && { ...prev, items: prev.items.map(a => (a.id === apt.id ? apt : a)) })
+        setSelected(s => (s?.id === apt.id ? apt : s))
+    }, [])
+
+    function changeView(next: View) {
+        setView(next)
+        if (!VIEW_RANGES[next].includes(range)) setRange(next === "calendar" ? "week" : "month")
+    }
+
+    function move(direction: -1 | 1) {
+        if (range === "day") setAnchor(a => addDays(a, direction))
+        else if (range === "week") setAnchor(a => addDays(a, 7 * direction))
+        else setAnchor(a => addMonths(a, direction))
+    }
+
+    async function changeStatus(apt: Appointment, status: AppointmentStatus) {
         try {
-            const response = await apiFetch("/api/v1/appointments", {
-                method: "POST",
-                body: JSON.stringify(formData)
+            const res = await apiFetch(`/api/v1/appointments/${apt.id}/status`, {
+                method: "PATCH",
+                body: JSON.stringify({ status }),
             })
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                toast.error(data.detail || "failed to create appointment")
+            const data = await res.json()
+            if (!res.ok) {
+                toast.error(errorMessage(data, "Couldn't update the status."))
                 return
             }
-
-            setAppointments([data, ...appointments])
-            setFormData({ clientName: "", date: "", time: "", status: "SCHEDULED" })
-            setIsModalOpen(false)
-            toast.success("Appointment created")
-        } catch (err: any) {
-            toast.error("Unexpected Error")
-        } finally {
-            setIsSubmitting(false)
+            replaceLocal(data)
+            toast.success(`${apt.clientName}: ${STATUS[status].label.toLowerCase()}.`)
+        } catch {
+            toast.error("Unexpected error.")
         }
     }
 
-    function startEditing(item: Appointment) {
-        setEditingId(item.id)
-        setEditFormData({
-            clientName: item.clientName,
-            date: item.date,
-            time: item.time,
-            status: item.status
-        })
-    }
-
-    async function saveEdit(id: string, item: Appointment) {
-        if (!editFormData.clientName || !editFormData.date || !editFormData.time) {
-            toast.error("Fill all required fields")
-            return
-        }
-
-        const hasChanged =
-            editFormData.clientName !== item.clientName ||
-            editFormData.date !== item.date ||
-            editFormData.time !== item.time ||
-            editFormData.status !== item.status
-
-        if (!hasChanged) {
-            setEditingId(null)
-            return
-        }
-
+    async function confirmDelete() {
+        const apt = toDelete
+        setToDelete(null)
+        if (!apt) return
         try {
-            const response = await apiFetch(`/api/v1/appointments/${id}`, {
-                method: "PUT",
-                body: JSON.stringify(editFormData)
-            })
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                toast.error(data.detail || "Failed to Update")
+            const res = await apiFetch(`/api/v1/appointments/${apt.id}`, { method: "DELETE" })
+            if (!res.ok) {
+                toast.error(errorMessage(await res.json(), "Couldn't delete the appointment."))
                 return
             }
-
-            setAppointments(appointments.map(a => (a.id === id ? data : a)))
-            setEditingId(null)
-            toast.success("Appointment Updated")
-        } catch (err: any) {
-            toast.error("error updating appointment")
+            setLoaded(prev => prev && { ...prev, items: prev.items.filter(a => a.id !== apt.id) })
+            setSelected(null)
+            toast.success("Appointment deleted.")
+        } catch {
+            toast.error("Unexpected error.")
         }
     }
 
-    function waitingConfirmation(id: string) {
-        setAppointmentToDelete(id)
-        setDeleteDialogOpen(true)
-    }
-
-    async function handleDeleteAppointment(id: string) {
-        if (!appointmentToDelete) return
-
+    async function exportPdf() {
         try {
-            const response = await apiFetch(`/api/v1/appointments/${id}`, {
-                method: "DELETE"
-            })
-
-            if (!response.ok) {
-                const data = await response.json()
-                toast.error(data.detail || "failed to delete")
+            const res = await apiFetch(`/api/v1/appointments/export/pdf?start=${start}&end=${end}`)
+            if (!res.ok) {
+                toast.error("Failed to generate PDF.")
                 return
             }
-
-            setAppointments(appointments.filter(a => a.id !== id))
-            toast.success("Appointment deleted")
-        } catch (err: any) {
-            toast.error("Error Deleting Appointment")
+            const url = URL.createObjectURL(await res.blob())
+            const a = document.createElement("a")
+            a.href = url
+            a.download = `appointments-${start}-to-${end}.pdf`
+            document.body.appendChild(a)
+            a.click()
+            a.remove()
+            URL.revokeObjectURL(url)
+        } catch {
+            toast.error("Error downloading the document.")
         }
     }
+
+    const today = mounted ? toKey(new Date()) : ""
+    const days = daysBetween(start, end)
 
     return (
-        <main className="space-y-6">
+        <main className="space-y-5">
             <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                        Schedule
-                    </h1>
-
-                    <p className="mt-1 text-sm text-foreground-muted">
-                        Manage your upcoming appointments and events.
-                    </p>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Schedule</h1>
+                    <p className="mt-1 text-sm text-foreground-muted">Book, organize and track your appointments.</p>
                 </div>
-
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={handleGeneratePDF}
-                        className="flex items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-background active:scale-95 cursor-pointer"
-                    >
+                    <button onClick={exportPdf}
+                        className="flex items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-background active:scale-95 cursor-pointer">
                         <Download className="h-4 w-4" />
                         Export PDF
                     </button>
-
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover active:scale-95 cursor-pointer"
-                    >
+                    <button onClick={() => setForm({ kind: "create", date: anchor < today ? today : anchor, time: nextSlot() })}
+                        className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover active:scale-95 cursor-pointer">
                         <Plus className="h-4 w-4" />
-                        Add Appointment
+                        New appointment
                     </button>
                 </div>
             </header>
 
-            <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="border-b border-border bg-background/50">
-                            <tr>
-                                <th
-                                    className="px-6 py-4 font-medium text-foreground-muted">
-                                    Client
-                                </th>
-
-                                <th
-                                    className="px-6 py-4 font-medium text-foreground-muted">Date</th>
-                                <th
-                                    className="px-6 py-4 font-medium text-foreground-muted">
-                                    Time
-                                </th>
-
-                                <th className="px-6 py-4 font-medium text-foreground-muted">
-                                    Status
-                                </th>
-
-                                <th className="px-6 py-4 text-right font-medium text-foreground-muted">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border">
-                            {isLoading ? (
-                                Array.from({ length: 3 }).map((_, i) => (
-                                    <tr key={i} className="animate-pulse">
-                                        <td className="px-6 py-4">
-                                            <div className="h-4 w-32 rounded bg-border" />
-                                        </td>
-
-                                        <td className="px-6 py-4">
-                                            <div className="h-4 w-24 rounded bg-border" />
-                                        </td>
-
-                                        <td className="px-6 py-4">
-                                            <div className="h-4 w-16 rounded bg-border" />
-                                        </td>
-
-                                        <td className="px-6 py-4">
-                                            <div className="h-6 w-20 rounded-full bg-border" />
-                                        </td>
-
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="ml-auto h-8 w-8 rounded bg-border" />
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : appointments.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-foreground-muted">
-                                        No appointments found. Click 'new appointment' to start.
-                                    </td>
-                                </tr>
-                            ) : (
-                                appointments.map((item) => (
-                                    editingId === item.id ? (
-                                        <tr key={item.id} className="bg-background/50">
-                                            <td className="px-6 py-4">
-                                                <input
-                                                    value={editFormData.clientName}
-                                                    onChange={(e) => setEditFormData({ ...editFormData, clientName: e.target.value })}
-                                                    className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm font-sans focus:border-primary focus:outline-none"
-                                                />
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <input
-                                                    type="date"
-                                                    value={editFormData.date}
-                                                    onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
-                                                    className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm font-sans focus:border-primary focus:outline-none"
-                                                />
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <input
-                                                    type="time"
-                                                    value={editFormData.time}
-                                                    onChange={(e) => setEditFormData({ ...editFormData, time: e.target.value })}
-                                                    className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm font-sans focus:border-primary focus:outline-none"
-                                                />
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <select
-                                                    value={editFormData.status}
-                                                    onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
-                                                    className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm font-sans [&>option]:font-sans focus:border-primary focus:outline-none"
-                                                >
-                                                    <option value="SCHEDULED">Scheduled</option>
-                                                    <option value="COMPLETED">Completed</option>
-                                                    <option value="CANCELLED">Cancelled</option>
-                                                </select>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <button
-                                                        onClick={() => saveEdit(item.id, item)}
-                                                        className="rounded-md bg-emerald-500/10 p-2 text-emerald-500 transition-colors hover:bg-emerald-500/20 cursor-pointer"
-                                                    >
-                                                        <Check className="h-4 w-4" />
-                                                    </button>
-
-                                                    <button
-                                                        onClick={() => setEditingId(null)}
-                                                        className="rounded-md bg-red-500/10 p-2 text-red-500 transition-colors hover:bg-red-500/20 cursor-pointer"
-                                                    >
-                                                        <X className="h-4 w-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        <tr key={item.id} className="transition-colors hover:bg-background/50">
-                                            <td className="px-6 py-4 font-medium text-foreground">{item.clientName}</td>
-                                            <td className="px-6 py-4 text-foreground-muted">{item.date}</td>
-                                            <td className="px-6 py-4 text-foreground-muted">{item.time}</td>
-                                            <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium ${item.status === 'SCHEDULED'
-                                                    ? 'border-primary/20 bg-primary/10 text-primary'
-                                                    : item.status === 'COMPLETED'
-                                                        ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
-                                                        : 'border-red-500/20 bg-red-500/10 text-red-500'
-                                                    }`}>
-                                                    {item.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-foreground-muted outline-none transition-colors hover:bg-border hover:text-foreground focus:ring-2 focus:ring-primary/50">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </DropdownMenuTrigger>
-
-                                                    <DropdownMenuContent
-                                                        align="end"
-                                                        className="w-32 font-sans"
-                                                    >
-                                                        <DropdownMenuItem
-                                                            onClick={() => startEditing(item)}
-                                                            className="cursor-pointer"
-                                                        >
-                                                            <Edit />
-                                                            <span>Edit</span>
-                                                        </DropdownMenuItem>
-
-                                                        <DropdownMenuItem
-                                                            onClick={() => waitingConfirmation(item.id)}
-                                                            className="cursor-pointer text-red-500 focus:bg-red-500/10 focus:text-red-500"
-                                                        >
-                                                            <Trash />
-                                                            <span>Delete</span>
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </td>
-                                        </tr>
-                                    )
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-                    <div className="w-full max-w-md rounded-2xl border border-border bg-surface shadow-2xl">
-                        <div className="flex items-center justify-between border-b border-border p-6">
-                            <h2 className="text-xl font-semibold text-foreground">
-                                New Appointment
-                            </h2>
-
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="text-foreground-muted transition-colors hover:text-foreground"
-                            >
-                                <X className="h-5 w-5" />
+            {/* toolbar */}
+            <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-2 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-wrap items-center gap-2">
+                    <div role="radiogroup" aria-label="View" className="flex rounded-lg bg-background p-1">
+                        {([["calendar", CalendarDays, "Calendar"], ["list", List, "List"]] as const).map(([v, Icon, label]) => (
+                            <button key={v} role="radio" aria-checked={view === v} onClick={() => changeView(v)}
+                                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer ${view === v ? "bg-surface text-foreground shadow-sm" : "text-foreground-muted hover:text-foreground"}`}>
+                                <Icon className="h-4 w-4" /> {label}
                             </button>
-                        </div>
-                        <form onSubmit={handleAdd} className="p-6">
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-foreground">Client Name</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={formData.clientName}
-                                        onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                                        className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-sans focus:border-primary focus:outline-none"
-                                        placeholder="Acme Corp"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-foreground">Date</label>
-                                    <input
-                                        type="date"
-                                        required
-                                        value={formData.date}
-                                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                        className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-sans focus:border-primary focus:outline-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-foreground">Time</label>
-                                    <input
-                                        type="time"
-                                        required
-                                        value={formData.time}
-                                        onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                                        className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-sans focus:border-primary focus:outline-none"
-                                    />
-                                </div>
-                            </div>
-                            <div className="mt-8 flex justify-end gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="rounded-lg px-4 py-2 text-sm font-medium text-foreground-muted transition-colors hover:bg-border hover:text-foreground"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                    className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
-                                >
-                                    {isSubmitting ? "Saving..." : "Save Appointment"}
-                                </button>
-                            </div>
-                        </form>
+                        ))}
                     </div>
+
+                    <div role="radiogroup" aria-label="Range" className="flex rounded-lg bg-background p-1">
+                        {VIEW_RANGES[view].map(r => (
+                            <button key={r} role="radio" aria-checked={range === r} onClick={() => setRange(r)}
+                                className={`rounded-md px-3 py-1.5 text-sm font-medium capitalize transition-colors cursor-pointer ${range === r ? "bg-surface text-foreground shadow-sm" : "text-foreground-muted hover:text-foreground"}`}>
+                                {r}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                        <button onClick={() => move(-1)} aria-label="Previous" className="rounded-md p-2 text-foreground-muted transition-colors hover:bg-background hover:text-foreground cursor-pointer">
+                            <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => setAnchor(toKey(new Date()))}
+                            className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-background cursor-pointer">
+                            Today
+                        </button>
+                        <button onClick={() => move(1)} aria-label="Next" className="rounded-md p-2 text-foreground-muted transition-colors hover:bg-background hover:text-foreground cursor-pointer">
+                            <ChevronRight className="h-4 w-4" />
+                        </button>
+                    </div>
+
+                    <h2 className="px-1 text-sm font-semibold text-foreground">{mounted ? rangeLabel(range, start, end) : ""}</h2>
                 </div>
+
+                {view === "list" && (
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="relative">
+                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground-muted" />
+                            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search client or service"
+                                aria-label="Search appointments"
+                                className="w-56 rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-foreground-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                        </div>
+                        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as AppointmentStatus | "ALL")}
+                            aria-label="Filter by status"
+                            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none">
+                            <option value="ALL">All statuses</option>
+                            {STATUS_ORDER.map(s => <option key={s} value={s}>{STATUS[s].label}</option>)}
+                        </select>
+                    </div>
+                )}
+            </div>
+
+            {/* period summary */}
+            {!isLoading && (
+                <p className="px-1 text-sm text-foreground-muted">
+                    <span className="font-medium text-foreground">{summary.count}</span> appointment{summary.count === 1 ? "" : "s"}
+                    {" · "}<span className="font-medium text-foreground">{money(summary.completed)}</span> completed
+                    {" · "}<span className="font-medium text-foreground">{money(summary.expected)}</span> expected
+                </p>
             )}
 
-            {deleteDialogOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-                    <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl">
-                        <h3 className="text-lg font-semibold text-foreground">
-                            Are you sure?
-                        </h3>
+            {!mounted || isLoading ? (
+                <div className="h-[480px] animate-pulse rounded-xl border border-border bg-surface" />
+            ) : view === "calendar" ? (
+                <CalendarView
+                    days={days}
+                    appointments={appointments}
+                    hours={hours}
+                    onSlotClick={(date, time) => setForm({ kind: "create", date, time })}
+                    onAppointmentClick={setSelected}
+                />
+            ) : (
+                <ListView
+                    appointments={filtered}
+                    money={money}
+                    onOpen={setSelected}
+                    onEdit={apt => setForm({ kind: "edit", appointment: apt })}
+                    onStatus={changeStatus}
+                    onDelete={setToDelete}
+                />
+            )}
 
+            {selected && (
+                <AppointmentDetails
+                    apt={selected}
+                    money={money}
+                    onClose={() => setSelected(null)}
+                    onEdit={() => { setForm({ kind: "edit", appointment: selected }); setSelected(null) }}
+                    onStatus={s => changeStatus(selected, s)}
+                    onDelete={() => setToDelete(selected)}
+                />
+            )}
+
+            {form && (
+                <AppointmentForm
+                    // remount per target so the form state starts fresh
+                    key={form.kind === "edit" ? form.appointment.id : `${form.date}-${form.time}`}
+                    initial={form}
+                    clients={clients}
+                    services={services}
+                    hours={hours}
+                    defaultDuration={company.defaultDuration}
+                    currency={company.currency}
+                    money={money}
+                    onClose={() => setForm(null)}
+                    onClientCreated={c => setClients(prev => [c, ...prev])}
+                    onSaved={apt => {
+                        setForm(null)
+                        // jump to the appointment if it was booked outside the visible range
+                        if (apt.date < start || apt.date > end) setAnchor(apt.date)
+                        else setReloadKey(k => k + 1)
+                    }}
+                />
+            )}
+
+            {toDelete && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+                    <div role="alertdialog" aria-modal="true" className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl">
+                        <h3 className="text-lg font-semibold text-foreground">Delete this appointment?</h3>
                         <p className="mt-2 text-sm text-foreground-muted">
-                            This action cannot be undone.
+                            {toDelete.clientName} · {formatDay(toDelete.date, { month: "short", day: "numeric" })} at {toDelete.time}.
+                            {" "}If it just didn&apos;t happen, prefer marking it as cancelled or no-show to keep your history.
                         </p>
-
                         <div className="mt-6 flex justify-end gap-3">
-                            <button
-                                onClick={() => {
-                                    appointmentToDelete && handleDeleteAppointment(appointmentToDelete)
-                                    setDeleteDialogOpen(false)
-                                }}
-                                className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-900 active:scale-95 cursor-pointer"
-
-                            >
-                                Yes, I'm sure.
+                            <button onClick={() => setToDelete(null)}
+                                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-background cursor-pointer">
+                                Keep it
                             </button>
-
-                            <button
-                                onClick={() => setDeleteDialogOpen(false)}
-                                className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover active:scale-95 cursor-pointer"
-                            >
-                                No, do not delete it.
+                            <button onClick={confirmDelete}
+                                className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 cursor-pointer">
+                                Delete
                             </button>
                         </div>
                     </div>
                 </div>
             )}
-
         </main>
     )
 }

@@ -7,8 +7,11 @@ from app.api.settings import require_admin
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
-CANCELLED = "CANCELLED"
 ALLOWED_PERIODS = (3, 6, 12)
+# money only counts once the service was actually delivered
+REALIZED = {"COMPLETED"}
+EXPECTED = {"SCHEDULED", "CONFIRMED"}
+INACTIVE = {"CANCELLED", "NO_SHOW"}
 
 
 def month_key(d: datetime) -> str:
@@ -56,6 +59,7 @@ async def get_analytics(
         include={"service": True},
     )
     expenses = await db.expense.find_many(where={"companyId": company_id, "date": in_period})
+    incomes = await db.income.find_many(where={"companyId": company_id, "date": in_period})
     new_clients = await db.customer.find_many(where={"companyId": company_id, "createdAt": in_period})
     total_clients = await db.customer.count(where={"companyId": company_id})
     total_services = await db.service.count(where={"companyId": company_id})
@@ -65,16 +69,22 @@ async def get_analytics(
     # 7 days x 24 hours, 0 = Sunday (same convention as business hours)
     heat = defaultdict(int)
     status_count = defaultdict(int)
+    appointment_revenue = 0.0
+    expected_revenue = 0.0
 
     for apt in appointments:
         status_count[apt.status] += 1
-        if apt.status == CANCELLED:
+        if apt.status in INACTIVE:
             continue
 
         k = month_key(apt.startTime)
         if k in monthly:
-            monthly[k]["revenue"] += apt.priceAtBooking
             monthly[k]["appointments"] += 1
+            if apt.status in REALIZED:
+                monthly[k]["revenue"] += apt.priceAtBooking
+                appointment_revenue += apt.priceAtBooking
+            elif apt.status in EXPECTED:
+                expected_revenue += apt.priceAtBooking
 
         day = (apt.startTime.weekday() + 1) % 7  # python: Monday = 0
         heat[(day, apt.startTime.hour)] += 1
@@ -90,6 +100,13 @@ async def get_analytics(
         if k in monthly:
             monthly[k]["expenses"] += e.amount
         expenses_by_category[e.category] += e.amount
+
+    manual_revenue = 0.0
+    for i in incomes:
+        k = month_key(i.date)
+        if k in monthly:
+            monthly[k]["revenue"] += i.amount
+            manual_revenue += i.amount
 
     for c in new_clients:
         k = month_key(c.createdAt)
@@ -114,8 +131,11 @@ async def get_analytics(
             "revenue": revenue,
             "expenses": total_expenses,
             "profit": round(revenue - total_expenses, 2),
+            "appointmentRevenue": round(appointment_revenue, 2),
+            "manualRevenue": round(manual_revenue, 2),
+            "expectedRevenue": round(expected_revenue, 2),
             "appointments": sum(m["appointments"] for m in monthly_list),
-            "cancelled": status_count.get(CANCELLED, 0),
+            "cancelled": status_count.get("CANCELLED", 0) + status_count.get("NO_SHOW", 0),
             "clients": total_clients,
             "newClients": len(new_clients),
             "services": total_services,

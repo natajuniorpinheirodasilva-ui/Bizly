@@ -14,8 +14,10 @@ async def get_stats(current_user: dict = Depends(get_current_user)):
     total_clients = await db.customer.count(where={"companyId": company_id})
     total_appointments = await db.appointment.count(where={"companyId": company_id})
 
-    revenue_result = await db.appointment.find_many(where={"companyId": company_id})
-    total_revenue = sum(a.priceAtBooking for a in revenue_result)
+    # same rule as analytics: completed appointments + manually registered income
+    completed = await db.appointment.find_many(where={"companyId": company_id, "status": "COMPLETED"})
+    incomes = await db.income.find_many(where={"companyId": company_id})
+    total_revenue = round(sum(a.priceAtBooking for a in completed) + sum(i.amount for i in incomes), 2)
 
     return {
         "total_clients": total_clients,

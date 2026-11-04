@@ -8,7 +8,7 @@ from app.api.clients import router as client_router
 from app.api.appointments import router as appointment_router
 from app.api.settings import router as settings_router
 from app.api.services import router as services_router
-from app.api.expenses import router as expenses_router
+from app.api.expenses import router as expenses_router, income_router
 from app.api.analytics import router as analytics_router
 
 @asynccontextmanager
@@ -39,4 +39,5 @@ app.include_router(appointment_router, prefix="/api/v1")
 app.include_router(settings_router, prefix="/api/v1")
 app.include_router(services_router, prefix="/api/v1")
 app.include_router(expenses_router, prefix="/api/v1")
+app.include_router(income_router, prefix="/api/v1")
 app.include_router(analytics_router, prefix="/api/v1")

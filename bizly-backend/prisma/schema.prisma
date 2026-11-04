@@ -26,6 +26,7 @@ model Company {
 
     users          User[]
     expenses       Expense[]
+    incomes        Income[]
     customers      Customer[]
     services       Service[]
     appointments   Appointment[]
@@ -72,6 +73,7 @@ model Customer {
     status       String        @default("ACTIVE")
     companyId    String        @map("company_id")
     company      Company       @relation(fields: [companyId], references: [id])
+    appointments Appointment[]
     createdAt    DateTime      @default(now()) @map("created_at")
     updatedAt    DateTime      @updatedAt @map("updated_at")
 
@@ -111,12 +113,31 @@ model Expense {
     @@map("expenses")
 }
 
+// Revenue registered by hand (product sales, one-off services, anything outside the schedule)
+model Income {
+    id          String   @id @default(uuid())
+    description String
+    category    String   @default("OTHER") // SERVICES, PRODUCTS, SUBSCRIPTIONS, OTHER
+    amount      Float
+    date        DateTime
+
+    companyId String  @map("company_id")
+    company   Company @relation(fields: [companyId], references: [id])
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    @@index([companyId, date])
+    @@map("incomes")
+}
+
 model Appointment {
     id             String   @id @default(uuid())
     startTime      DateTime @map("start_time")
     endTime        DateTime @map("end_time")
-    status         String   @default("PENDING") // same thing String -> Status and "PENDING" -> PENDING
+    status         String   @default("SCHEDULED") // SCHEDULED, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW
     priceAtBooking Float    @map("price_at_booking")
+    notes          String?
 
     companyId String  @map("company_id")
     company   Company @relation(fields: [companyId], references: [id])
@@ -124,7 +145,11 @@ model Appointment {
     userId String @map("user_id")
     user   User   @relation(fields: [userId], references: [id])
 
+    // snapshot of the name at booking time; also used for walk-ins without a client record
     clientName String @map("client_name")
+
+    customerId String?   @map("customer_id")
+    customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
     serviceId String  @map("service_id")
     service   Service @relation(fields: [serviceId], references: [id])
@@ -132,6 +157,7 @@ model Appointment {
     createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @updatedAt @map("updated_at")
 
+    @@index([companyId, startTime])
     @@map("appointments")
 }
 
