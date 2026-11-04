@@ -25,6 +25,7 @@ model Company {
     defaultDuration Int           @default(60) @map("default_duration")
 
     users          User[]
+    expenses       Expense[]
     customers      Customer[]
     services       Service[]
     appointments   Appointment[]
@@ -91,6 +92,23 @@ model Service {
     updatedAt    DateTime      @updatedAt @map("updated_at")
 
     @@map("services")
+}
+
+model Expense {
+    id          String   @id @default(uuid())
+    description String
+    category    String   @default("OTHER") // RENT, SALARIES, SUPPLIES, MARKETING, UTILITIES, TAXES, OTHER
+    amount      Float
+    date        DateTime
+
+    companyId String  @map("company_id")
+    company   Company @relation(fields: [companyId], references: [id])
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    @@index([companyId, date])
+    @@map("expenses")
 }
 
 model Appointment {

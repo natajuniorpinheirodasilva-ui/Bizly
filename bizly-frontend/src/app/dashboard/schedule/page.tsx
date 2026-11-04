@@ -201,7 +201,7 @@ export default function SchedulePage() {
                         className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover active:scale-95 cursor-pointer"
                     >
                         <Plus className="h-4 w-4" />
-                        Add Client
+                        Add Appointment
                     </button>
                 </div>
             </header>

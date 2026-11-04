@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Users, Calendar, Settings, X } from "lucide-react"
+import { LayoutDashboard, Users, Calendar, Settings, X, BarChart3 } from "lucide-react"
 
 type SidebarProps = {
     isOpen: boolean
@@ -11,6 +11,7 @@ const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { name: "Clients", href: "/dashboard/clients", icon: Users },
     { name: "Schedule", href: "/dashboard/schedule", icon: Calendar },
+    { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
     { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ]
 

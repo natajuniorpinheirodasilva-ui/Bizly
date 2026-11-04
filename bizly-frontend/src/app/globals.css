@@ -51,6 +51,14 @@
   /* Shadcn compat */
   --popover: var(--surface);
   --popover-foreground: var(--foreground);
+
+  /* Charts (validated for CVD + contrast against --surface) */
+  --chart-1: #2a78d6;        /* revenue, appointments */
+  --chart-2: #eb6834;        /* expenses, new clients */
+  --chart-negative: #e34948; /* loss */
+  --chart-grid: #e8edf3;
+  --chart-axis: #c3cbd6;
+  --success-text: #006300;
 }
 
 @theme inline {
@@ -127,5 +135,12 @@ body {
 
     --popover: #1e293b;
     --popover-foreground: #f8fafc;
+
+    --chart-1: #3987e5;
+    --chart-2: #d95926;
+    --chart-negative: #e66767;
+    --chart-grid: #2b3a50;
+    --chart-axis: #475569;
+    --success-text: #0ca30c;
   }
 }
