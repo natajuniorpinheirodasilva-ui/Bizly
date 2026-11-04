@@ -17,7 +17,7 @@ export default function Settings() {
 
             <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
                 <div className="">
-
+                    
                 </div>
             </section>
         </main>
