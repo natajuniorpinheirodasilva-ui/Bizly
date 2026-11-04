@@ -39,10 +39,11 @@ const DURATIONS = [15, 30, 45, 60, 90, 120]
 
 export default function BusinessTab() {
     const [form, setForm] = useState<Company>(EMPTY)
-    const [isLoading, setIsLoading] = useState(true)
-    const [isSaving, setIsSaving] = useState(false)
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [isSaving, setIsSaving] = useState<boolean>(false)
 
     useEffect(() => {
+        setIsLoading(true)
         async function load() {
             try {
                 const res = await apiFetch("/api/v1/settings/company")

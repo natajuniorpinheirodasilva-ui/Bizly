@@ -153,7 +153,7 @@ export default function Login() {
                             disabled={isLoading}
                             className={isLoading
                                 ? "cursor-not-allowed opacity-70 rounded-lg bg-primary py-3.5 text-base font-semibold text-white transition-colors"
-                                : "cursor-pointer rounded-lg bg-primary py-3.5 text-base font-semibold text-white transition-colors hover:bg-primary-hover hover:scale-101 transition-all duration-300"}
+                                : "cursor-pointer rounded-lg bg-primary py-3.5 text-base font-semibold text-white hover:bg-primary-hover hover:scale-101 transition-all duration-300"}
                         >
                             {isLoading ? "LOGGING IN" : "LOG IN"}
                         </button>
