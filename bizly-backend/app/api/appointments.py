@@ -25,6 +25,10 @@ class AppointmentUpdate(BaseModel):
     time: str
     status: Optional[str] = "SCHEDULED"
 
+async def get_default_duration(company_id: str) -> int:
+    company = await db.company.find_unique(where={"id": company_id})
+    return company.defaultDuration if company else 60
+
 class AppointmentResponse(BaseModel):
     id: str
     clientName: str
@@ -138,14 +142,15 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
 
     try:
         start_datetime = datetime.strptime(f"{data.date} {data.time}", "%Y-%m-%d %H:%M")
-        end_datetime = start_datetime + timedelta(minutes=60)
+        duration = await get_default_duration(company_id)
+        end_datetime = start_datetime + timedelta(minutes=duration)
 
         service = await db.service.find_first(where={"companyId": company_id})
         if not service:
             service = await db.service.create(
                 data={
                     "name": "General Appointment",
-                    "duration": 60,
+                    "duration": duration,
                     "price": 0.0,
                     "companyId": company_id
                 }
@@ -195,7 +200,7 @@ async def update_appointment(appointment_id: str, data: AppointmentUpdate, curre
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment not found")
 
         start_datetime = datetime.strptime(f"{data.date} {data.time}", "%Y-%m-%d %H:%M")
-        end_datetime = start_datetime + timedelta(minutes=60)
+        end_datetime = start_datetime + (existing.endTime - existing.startTime)
 
         updated = await db.appointment.update(
             where={"id": appointment_id},

@@ -6,7 +6,7 @@ export default function FormInput({ className = "", ...props }: Props) {
     return (
         <input
             {...props}
-            className={`w-full rounded-lg border border-border bg-input px-4 py-3 text-base text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 ${className}`}
+            className={`w-full rounded-lg border border-border bg-input px-4 py-3 text-base text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 ${className ?? ""}`}
         />
     )
 }
