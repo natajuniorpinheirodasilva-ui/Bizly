@@ -1,9 +1,4 @@
-# segredos
 .env
-
-# dados e binários do Postgres embutido
 .data/
-
-# executáveis gerados pelo go build
 *.exe
 /bin/

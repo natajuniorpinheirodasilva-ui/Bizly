@@ -1,12 +1,6 @@
 package database
 
-// Testes de integração: sobem um Postgres temporário de verdade e conferem
-// que as travas de segurança do banco funcionam.
-//
-// Rodar:  go test ./internal/database/ -v
-//
-// Em Go, arquivos que terminam em _test.go só são compilados pelo "go test",
-// e toda função TestXxx(t *testing.T) vira um teste.
+// Integration tests: spin up a throwaway Postgres and check the DB security guarantees.
 
 import (
 	"context"
@@ -29,16 +23,14 @@ func randomPassword(t *testing.T) string {
 	return hex.EncodeToString(b)
 }
 
-// setupDB liga um Postgres numa pasta temporária (apagada no fim do teste),
-// roda as migrations e devolve o pool do usuário da aplicação.
 func setupDB(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	ctx := context.Background()
 
-	cache, _ := filepath.Abs("../../.data/cache") // reaproveita os binários já baixados
+	cache, _ := filepath.Abs("../../.data/cache") // reuse downloaded binaries
 	cfg := config.Config{
-		EmbeddedPGDir:   t.TempDir(), // o Go apaga essa pasta sozinho no fim
-		EmbeddedPGPort:  5544,        // porta diferente da API de dev
+		EmbeddedPGDir:   t.TempDir(),
+		EmbeddedPGPort:  5544, // avoid clashing with the dev instance
 		EmbeddedPGCache: cache,
 		DBName:          "bizly_test",
 		OwnerUser:       "owner_test",
@@ -49,9 +41,9 @@ func setupDB(t *testing.T) *pgxpool.Pool {
 
 	stopPG, err := StartEmbedded(cfg)
 	if err != nil {
-		t.Fatalf("subindo postgres de teste: %v", err)
+		t.Fatalf("start test postgres: %v", err)
 	}
-	t.Cleanup(func() { _ = stopPG() }) // Cleanup = roda no fim do teste, mesmo se falhar
+	t.Cleanup(func() { _ = stopPG() })
 
 	ownerURL := "postgres://owner_test:" + cfg.OwnerPassword + "@localhost:5544/bizly_test?sslmode=disable"
 	appURL := "postgres://bizly_app:" + cfg.AppPassword + "@localhost:5544/bizly_test?sslmode=disable"
@@ -74,15 +66,14 @@ func TestSecurity(t *testing.T) {
 	pool := setupDB(t)
 	ctx := context.Background()
 
-	// duas empresas (a tabela companies não tem RLS)
 	var companyA, companyB string
 	for _, c := range []struct {
 		name, slug string
 		id         *string
-	}{{"Empresa A", "empresa-a", &companyA}, {"Empresa B", "empresa-b", &companyB}} {
+	}{{"Company A", "company-a", &companyA}, {"Company B", "company-b", &companyB}} {
 		err := pool.QueryRow(ctx, "INSERT INTO companies (name, slug) VALUES ($1, $2) RETURNING id", c.name, c.slug).Scan(c.id)
 		if err != nil {
-			t.Fatalf("criando %s: %v", c.name, err)
+			t.Fatalf("create %s: %v", c.name, err)
 		}
 	}
 
@@ -98,8 +89,7 @@ func TestSecurity(t *testing.T) {
 		return n
 	}
 
-	// t.Run cria "subtestes": cada um aparece separado no resultado.
-	t.Run("empresa grava os próprios clientes", func(t *testing.T) {
+	t.Run("tenant writes its own customers", func(t *testing.T) {
 		err := WithTenant(ctx, pool, companyA, func(tx pgx.Tx) error { return insertCustomer(tx, companyA, "Maria (A)") })
 		if err != nil {
 			t.Fatal(err)
@@ -110,62 +100,62 @@ func TestSecurity(t *testing.T) {
 		}
 	})
 
-	t.Run("empresa A não enxerga clientes da B", func(t *testing.T) {
+	t.Run("tenant cannot read another tenant's rows", func(t *testing.T) {
 		_ = WithTenant(ctx, pool, companyA, func(tx pgx.Tx) error {
 			if n := countCustomers(tx); n != 1 {
-				t.Errorf("empresa A deveria ver 1 cliente, viu %d", n)
+				t.Errorf("company A should see 1 customer, saw %d", n)
 			}
 			return nil
 		})
 	})
 
-	t.Run("empresa A não consegue gravar cliente na B", func(t *testing.T) {
-		err := WithTenant(ctx, pool, companyA, func(tx pgx.Tx) error { return insertCustomer(tx, companyB, "Intruso") })
+	t.Run("tenant cannot write into another tenant", func(t *testing.T) {
+		err := WithTenant(ctx, pool, companyA, func(tx pgx.Tx) error { return insertCustomer(tx, companyB, "Intruder") })
 		if err == nil {
-			t.Error("o banco deveria ter recusado gravar dado em outra empresa")
+			t.Error("expected RLS to reject a cross-tenant insert")
 		}
 	})
 
-	t.Run("sem empresa definida, não vê nada", func(t *testing.T) {
+	t.Run("no tenant set sees nothing", func(t *testing.T) {
 		var n int
 		if err := pool.QueryRow(ctx, "SELECT count(*) FROM customers").Scan(&n); err != nil {
 			t.Fatal(err)
 		}
 		if n != 0 {
-			t.Errorf("sem app.company_id deveria ver 0 clientes, viu %d", n)
+			t.Errorf("expected 0 customers without app.company_id, saw %d", n)
 		}
 	})
 
-	t.Run("usuário da aplicação não é superusuário", func(t *testing.T) {
+	t.Run("app role is not superuser", func(t *testing.T) {
 		var super, bypass bool
 		err := pool.QueryRow(ctx, "SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user").Scan(&super, &bypass)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if super || bypass {
-			t.Errorf("bizly_app não pode ser superusuário nem ignorar RLS (super=%v bypassrls=%v)", super, bypass)
+			t.Errorf("bizly_app must not be superuser or bypass RLS (super=%v bypassrls=%v)", super, bypass)
 		}
 	})
 
-	t.Run("usuário da aplicação não altera estrutura", func(t *testing.T) {
+	t.Run("app role cannot change schema", func(t *testing.T) {
 		if _, err := pool.Exec(ctx, "CREATE TABLE hack (id int)"); err == nil {
-			t.Error("bizly_app não deveria conseguir criar tabelas")
+			t.Error("bizly_app should not be able to create tables")
 		}
 		if _, err := pool.Exec(ctx, "DROP TABLE customers"); err == nil {
-			t.Error("bizly_app não deveria conseguir apagar tabelas")
+			t.Error("bizly_app should not be able to drop tables")
 		}
 		if _, err := pool.Exec(ctx, "DELETE FROM goose_db_version"); err == nil {
-			t.Error("bizly_app não deveria mexer no controle de migrations")
+			t.Error("bizly_app should not touch the migrations table")
 		}
 	})
 
-	t.Run("postgres só escuta em localhost", func(t *testing.T) {
+	t.Run("postgres listens on localhost only", func(t *testing.T) {
 		var listen string
 		if err := pool.QueryRow(ctx, "SHOW listen_addresses").Scan(&listen); err != nil {
 			t.Fatal(err)
 		}
 		if listen != "localhost" {
-			t.Errorf("listen_addresses deveria ser localhost, é %q", listen)
+			t.Errorf("listen_addresses should be localhost, got %q", listen)
 		}
 	})
 }

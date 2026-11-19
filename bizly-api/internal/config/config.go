@@ -1,7 +1,4 @@
-// Package config lê as configurações da aplicação a partir de variáveis de ambiente.
-//
-// Em Go é comum ter um pacote só para isso: o resto do código recebe um Config
-// pronto e nunca chama os.Getenv diretamente (fica fácil de testar e de achar).
+// Package config loads settings from environment variables (and .env in dev).
 package config
 
 import (
@@ -13,37 +10,28 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Config tem tudo que a aplicação precisa para subir.
-// Em Go, campos com letra MAIÚSCULA são públicos (visíveis fora do pacote);
-// minúscula = privado. Não existe "public"/"private" escrito.
 type Config struct {
-	Env      string // "development" ou "production"
-	HTTPAddr string // endereço do servidor, ex: "127.0.0.1:8080"
+	Env      string // "development" or "production"
+	HTTPAddr string
 
-	// Postgres embutido (só em desenvolvimento)
+	// Embedded Postgres (development only)
 	EmbeddedPG      bool
 	EmbeddedPGDir   string
 	EmbeddedPGPort  uint32
-	EmbeddedPGCache string // onde ficam os binários baixados; vazio = <EmbeddedPGDir>/cache
+	EmbeddedPGCache string // binaries cache; empty = <EmbeddedPGDir>/cache
 
-	// Credenciais do banco
 	DBName        string
-	OwnerUser     string // dono: roda as migrations
+	OwnerUser     string // runs migrations
 	OwnerPassword string
-	AppUser       string // usado pela API (sem superpoderes, respeita RLS)
+	AppUser       string // used by the API, subject to RLS
 	AppPassword   string
 
-	// Em produção, as URLs completas vêm prontas do provedor do banco.
 	OwnerDatabaseURL string
 	AppDatabaseURL   string
 }
 
-// Load carrega o .env (se existir) e monta o Config.
-// Em Go, funções que podem falhar devolvem (resultado, error); quem chama SEMPRE confere o erro.
 func Load() (Config, error) {
-	// .env é opcional: em produção as variáveis vêm do próprio servidor.
-	// O "_ =" ignora o erro de propósito (arquivo inexistente não é problema).
-	_ = godotenv.Load()
+	_ = godotenv.Load() // .env is optional
 
 	cfg := Config{
 		Env:              getEnv("APP_ENV", "development"),
@@ -61,24 +49,23 @@ func Load() (Config, error) {
 
 	port, err := strconv.ParseUint(getEnv("EMBEDDED_PG_PORT", "5433"), 10, 32)
 	if err != nil {
-		return Config{}, fmt.Errorf("EMBEDDED_PG_PORT inválida: %w", err) // %w "embrulha" o erro original
+		return Config{}, fmt.Errorf("invalid EMBEDDED_PG_PORT: %w", err)
 	}
 	cfg.EmbeddedPGPort = uint32(port)
 
 	if cfg.EmbeddedPG {
 		if cfg.Env == "production" {
-			return Config{}, errors.New("EMBEDDED_PG não pode ser usado em produção")
+			return Config{}, errors.New("EMBEDDED_PG must not be used in production")
 		}
 		if cfg.OwnerPassword == "" || cfg.AppPassword == "" {
-			return Config{}, errors.New("defina DB_OWNER_PASSWORD e DB_APP_PASSWORD no .env (veja .env.example)")
+			return Config{}, errors.New("DB_OWNER_PASSWORD and DB_APP_PASSWORD are required (see .env.example)")
 		}
-		// Com o banco embutido, nós mesmos montamos as URLs de conexão (sempre em localhost).
 		cfg.OwnerDatabaseURL = postgresURL(cfg.OwnerUser, cfg.OwnerPassword, cfg.EmbeddedPGPort, cfg.DBName)
 		cfg.AppDatabaseURL = postgresURL(cfg.AppUser, cfg.AppPassword, cfg.EmbeddedPGPort, cfg.DBName)
 	}
 
 	if cfg.OwnerDatabaseURL == "" || cfg.AppDatabaseURL == "" {
-		return Config{}, errors.New("OWNER_DATABASE_URL e APP_DATABASE_URL são obrigatórias sem o Postgres embutido")
+		return Config{}, errors.New("OWNER_DATABASE_URL and APP_DATABASE_URL are required without embedded Postgres")
 	}
 
 	return cfg, nil
@@ -88,7 +75,6 @@ func postgresURL(user, password string, port uint32, db string) string {
 	return fmt.Sprintf("postgres://%s:%s@localhost:%d/%s?sslmode=disable", user, password, port, db)
 }
 
-// getEnv devolve a variável de ambiente ou um valor padrão.
 func getEnv(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
