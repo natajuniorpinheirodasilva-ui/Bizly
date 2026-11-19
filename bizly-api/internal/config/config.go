@@ -28,6 +28,8 @@ type Config struct {
 
 	OwnerDatabaseURL string
 	AppDatabaseURL   string
+
+	// TODO: JWTSecret string (JWT_SECRET, at least 32 chars)
 }
 
 func Load() (Config, error) {
