@@ -303,7 +303,7 @@ export default function SchedulePage() {
             )}
 
             {!mounted || isLoading ? (
-                <div className="h-[480px] animate-pulse rounded-xl border border-border bg-surface" />
+                <div className="h-120 animate-pulse rounded-xl border border-border bg-surface" />
             ) : view === "calendar" ? (
                 <CalendarView
                     days={days}
@@ -357,7 +357,7 @@ export default function SchedulePage() {
             )}
 
             {toDelete && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+                <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
                     <div role="alertdialog" aria-modal="true" className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl">
                         <h3 className="text-lg font-semibold text-foreground">Delete this appointment?</h3>
                         <p className="mt-2 text-sm text-foreground-muted">
