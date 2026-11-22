@@ -4,6 +4,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 
@@ -29,7 +30,7 @@ type Config struct {
 	OwnerDatabaseURL string
 	AppDatabaseURL   string
 
-	// TODO: JWTSecret string (JWT_SECRET, at least 32 chars)
+	JWTSecret string
 }
 
 func Load() (Config, error) {
@@ -47,6 +48,7 @@ func Load() (Config, error) {
 		AppPassword:      os.Getenv("DB_APP_PASSWORD"),
 		OwnerDatabaseURL: os.Getenv("OWNER_DATABASE_URL"),
 		AppDatabaseURL:   os.Getenv("APP_DATABASE_URL"),
+		JWTSecret:        os.Getenv("JWT_SECRET"),
 	}
 
 	port, err := strconv.ParseUint(getEnv("EMBEDDED_PG_PORT", "5433"), 10, 32)
@@ -70,11 +72,23 @@ func Load() (Config, error) {
 		return Config{}, errors.New("OWNER_DATABASE_URL and APP_DATABASE_URL are required without embedded Postgres")
 	}
 
+	if len(cfg.JWTSecret) < 32 {
+		return Config{}, errors.New("JWT_SECRET must be at least 32 characters")
+	}
+
 	return cfg, nil
 }
 
 func postgresURL(user, password string, port uint32, db string) string {
-	return fmt.Sprintf("postgres://%s:%s@localhost:%d/%s?sslmode=disable", user, password, port, db)
+	u := url.URL{
+		Scheme:   "postgres",
+		User:     url.UserPassword(user, password),
+		Host:     fmt.Sprintf("localhost:%d", port),
+		Path:     fmt.Sprintf("/%s", db),
+		RawQuery: "sslmode=disable",
+	}
+
+	return u.String()
 }
 
 func getEnv(key, fallback string) string {
