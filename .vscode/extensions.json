@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "golang.go",
+        "usernamehw.errorlens",
+        "humao.rest-client",
+        "qwtel.sqlite-viewer",
+        "prisma.prisma",
+        "bradlc.vscode-tailwindcss"
+    ]
+}
