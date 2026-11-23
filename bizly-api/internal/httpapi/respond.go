@@ -2,6 +2,8 @@ package httpapi
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 )
 
@@ -21,5 +23,13 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 
-	return dec.Decode(dst)
+	if err := dec.Decode(dst); err != nil {
+		return err
+	}
+
+	if err := dec.Decode(&struct{}{}); err != io.EOF {
+		return errors.New("request body must have only one JSON object")
+	}
+
+	return nil
 }
