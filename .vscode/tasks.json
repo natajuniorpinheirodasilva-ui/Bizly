@@ -1,0 +1,48 @@
+{
+    "version": "2.0.0",
+    "options": {
+        "cwd": "${workspaceFolder}/bizly-api"
+    },
+    "tasks": [
+        {
+            "label": "go: run",
+            "type": "shell",
+            "command": "go run ./cmd/api",
+            "problemMatcher": ["$go"]
+        },
+        {
+            "label": "go: test",
+            "type": "shell",
+            "command": "go test -cover ./...",
+            "group": { "kind": "test", "isDefault": true },
+            "problemMatcher": ["$go"]
+        },
+        {
+            "label": "go: lint",
+            "type": "shell",
+            "command": "golangci-lint run ./...",
+            "problemMatcher": ["$go"]
+        },
+        {
+            "label": "go: build",
+            "type": "shell",
+            "command": "go build -o bin/api.exe ./cmd/api",
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": ["$go"]
+        },
+        {
+            "label": "go: tidy",
+            "type": "shell",
+            "command": "go mod tidy",
+            "problemMatcher": []
+        },
+        {
+            "label": "python: backend antigo (referência)",
+            "type": "shell",
+            "command": "./venv/Scripts/uvicorn app.main:app --reload",
+            "options": { "cwd": "${workspaceFolder}/bizly-backend" },
+            "isBackground": true,
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,9 +1,9 @@
-// Package auth
+// Package auth handles password hashing and JWT tokens
 package auth
 
 import "golang.org/x/crypto/bcrypt"
 
-// HashPassword generate the password hash
+// HashPassword generates the password hash
 func HashPassword(plain string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plain), bcrypt.DefaultCost)
 	if err != nil {

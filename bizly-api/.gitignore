@@ -1,4 +1,17 @@
 .env
+.env.*
+!.env.example
 .data/
 *.exe
 /bin/
+
+# go test / coverage
+*.test
+*.out
+coverage.html
+
+# air hot reload
+/tmp/
+
+# delve debugger
+__debug_bin*
