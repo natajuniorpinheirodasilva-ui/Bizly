@@ -11,12 +11,13 @@ import (
 )
 
 type Server struct {
-	db     *pgxpool.Pool
-	logger *slog.Logger
+	db        *pgxpool.Pool
+	logger    *slog.Logger
+	jwtSecret string
 }
 
-func NewServer(db *pgxpool.Pool, logger *slog.Logger) *Server {
-	return &Server{db: db, logger: logger}
+func NewServer(db *pgxpool.Pool, logger *slog.Logger, jwtSecret string) *Server {
+	return &Server{db: db, logger: logger, jwtSecret: jwtSecret}
 }
 
 func (s *Server) Routes() http.Handler {

@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"net/mail"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"bizly-api/internal/auth"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -23,6 +25,24 @@ type loginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
+
+type userResponse struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Role      string `json:"role"`
+	CompanyID string `json:"company_id"`
+}
+
+type loginResponse struct {
+	AccessToken string       `json:"access_token"`
+	TokenType   string       `json:"token_type"`
+	User        userResponse `json:"user"`
+}
+
+var dummyHash, _ = auth.HashPassword("dummy-password-for-timing")
+
+const tokenTTL = 7 * 24 * time.Hour
 
 func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	var req registerRequest
@@ -119,7 +139,63 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"message": "Account created"})
 }
 
-// TODO: handleLogin (POST /api/v1/auth/login)
-//   - find user by email, check password, load membership (company_id, role)
-//   - wrong email or password -> 401 "Invalid credentials" (same message for both)
-//   - 200 {access_token, token_type: "bearer", user: {id, name, email, role, company_id}}
+func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
+	var req loginRequest
+
+	if err := decodeJSON(w, r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid body request")
+		return
+	}
+
+	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
+
+	ctx := r.Context()
+
+	var userID, name, passwordHash string
+	err := s.db.QueryRow(ctx, "SELECT id, name, password_hash FROM users WHERE email = $1", req.Email).Scan(&userID, &name, &passwordHash)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			// prevents timing attacks
+			auth.CheckPassword(dummyHash, req.Password)
+			writeError(w, http.StatusUnauthorized, "Invalid credentials")
+
+			return
+		}
+
+		s.logger.Error("login: select user", "err", err)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	if !auth.CheckPassword(passwordHash, req.Password) {
+		writeError(w, http.StatusUnauthorized, "Invalid credentials")
+		return
+	}
+
+	var companyID, role string
+	err = s.db.QueryRow(ctx, "SELECT company_id, role FROM memberships WHERE user_id = $1 ORDER BY created_at LIMIT 1", userID).Scan(&companyID, &role)
+	if err != nil {
+		s.logger.Error("login: select company and role", "err", err)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	token, err := auth.IssueToken(userID, req.Email, role, companyID, s.jwtSecret, tokenTTL)
+	if err != nil {
+		s.logger.Error("login: issue token", "err", err)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, loginResponse{
+		AccessToken: token,
+		TokenType:   "bearer",
+		User: userResponse{
+			ID:        userID,
+			Name:      name,
+			Email:     req.Email,
+			Role:      role,
+			CompanyID: companyID,
+		},
+	})
+}
