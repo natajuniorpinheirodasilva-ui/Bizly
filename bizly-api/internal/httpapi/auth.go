@@ -1,12 +1,15 @@
 package httpapi
 
 import (
+	"errors"
 	"net/http"
 	"net/mail"
 	"strings"
 	"unicode/utf8"
 
 	"bizly-api/internal/auth"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type registerRequest struct {
@@ -21,11 +24,6 @@ type loginRequest struct {
 	Password string `json:"password"`
 }
 
-// TODO: handleRegister (POST /api/v1/auth/register)
-//   - decode + validate input
-//   - in one transaction: insert company (unique slug), user, membership (OWNER)
-//   - duplicate email (pg code 23505) -> 400 "User with this email already exists."
-//   - 200 {"message": "Account created"}
 func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	var req registerRequest
 
@@ -69,7 +67,56 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = hash
+	ctx := r.Context()
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		s.logger.Error("register: begin tx", "err", err)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	var companyID string
+
+	err = tx.QueryRow(ctx, "INSERT INTO companies (name, slug) VALUES ($1, $2) RETURNING id", req.CompanyName, makeSlug(req.CompanyName)).Scan(&companyID)
+	if err != nil {
+		s.logger.Error("register: insert company", "err", err)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	var userID string
+
+	err = tx.QueryRow(ctx, "INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id", req.Name, req.Email, hash).Scan(&userID)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			writeError(w, http.StatusBadRequest, "User with this email already exists")
+			return
+		}
+
+		s.logger.Error("register: insert user", "err", err)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	_, err = tx.Exec(ctx, "INSERT INTO memberships (company_id, user_id, role) VALUES ($1, $2, 'OWNER')", companyID, userID)
+	if err != nil {
+		s.logger.Error("register: insert membership", "err", err)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		s.logger.Error("register: commit new account", "err", err)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"message": "Account created"})
 }
 
 // TODO: handleLogin (POST /api/v1/auth/login)
