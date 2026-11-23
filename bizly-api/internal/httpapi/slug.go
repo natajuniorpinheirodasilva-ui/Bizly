@@ -23,9 +23,22 @@ func stripAccents(s string) string {
 	return result
 }
 
-func makeSlug(name string) string {
+// Letters that aren't base letter + accent, so stripAccents can't handle them.
+// Apostrophes are dropped so "joe's" becomes "joes", not "joe-s".
+var letterReplacer = strings.NewReplacer(
+	"ß", "ss",
+	"æ", "ae",
+	"œ", "oe",
+	"ø", "o",
+	"ł", "l",
+	"đ", "d",
+	"þ", "th",
+	"'", "",
+	"’", "",
+)
 
-	text := stripAccents(strings.ToLower(name))
+func makeSlug(name string) string {
+	text := stripAccents(letterReplacer.Replace(strings.ToLower(name)))
 
 	var b strings.Builder
 	lastWasDash := false
@@ -41,17 +54,16 @@ func makeSlug(name string) string {
 		}
 	}
 
-	slug := b.String()
-
-	// removes unnecessary -'s. Caffè & Tiramisù! = caffe-tiramisu
-	slug = strings.Trim(slug, "-")
+	// trim before cutting so a leading dash doesn't eat into the 50 chars,
+	// and again after, in case the cut lands on a dash
+	slug := strings.Trim(b.String(), "-")
 	if len(slug) > 50 {
-		slug = slug[:50]
-		// strip the -'s again, if it comes back
-		slug = strings.Trim(slug, "-")
+		slug = strings.Trim(slug[:50], "-")
 	}
+
+	// non-Latin names (e.g. Japanese, Cyrillic) leave nothing behind
 	if slug == "" {
-		slug = "defaultCompanyName"
+		slug = "company"
 	}
 
 	suffix := strings.ToLower(rand.Text()[:6])

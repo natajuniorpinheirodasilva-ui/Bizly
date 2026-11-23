@@ -23,7 +23,7 @@ func NewServer(db *pgxpool.Pool, logger *slog.Logger, jwtSecret string) *Server 
 func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", s.handleHealth)
-	// TODO: POST /api/v1/auth/login
+	mux.HandleFunc("POST /api/v1/auth/login", s.handleLogin)
 	mux.HandleFunc("POST /api/v1/auth/register", s.handleRegister)
 	// TODO: wrap mux with the cors middleware
 	return mux
