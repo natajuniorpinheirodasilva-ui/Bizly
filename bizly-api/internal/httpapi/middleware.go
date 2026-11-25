@@ -1,9 +1,14 @@
 package httpapi
 
-import "net/http"
+import (
+	"net/http"
+	"time"
+)
 
-// TODO: cors(next http.Handler) http.Handler: allow the frontend origin
-// (http://localhost:3000), handle OPTIONS preflight.
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
 
 const allowedOrigin = "http://localhost:3000"
 
@@ -24,5 +29,21 @@ func cors(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+func (rec *statusRecorder) WriteHeader(code int) {
+	rec.status = code
+	rec.ResponseWriter.WriteHeader(code)
+}
+
+func (s *Server) logRequests(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+
+		next.ServeHTTP(rec, r)
+
+		s.logger.Info("request", "method", r.Method, "path", r.URL.Path, "status", rec.status, "duration", time.Since(start))
 	})
 }

@@ -25,8 +25,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /health", s.handleHealth)
 	mux.HandleFunc("POST /api/v1/auth/login", s.handleLogin)
 	mux.HandleFunc("POST /api/v1/auth/register", s.handleRegister)
-	// TODO: wrap mux with the cors middleware
-	return cors(mux)
+	return s.logRequests(cors(mux))
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
