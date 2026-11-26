@@ -44,11 +44,27 @@ var dummyHash, _ = auth.HashPassword("dummy-password-for-timing")
 
 const tokenTTL = 7 * 24 * time.Hour
 
+func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
+	claims := claimsFrom(r)
+	if claims == nil {
+		writeError(w, http.StatusUnauthorized, "Not authenticated")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, userResponse{
+		ID:        claims.Subject,
+		Name:      "",
+		Email:     claims.Email,
+		Role:      claims.Role,
+		CompanyID: claims.CompanyID,
+	})
+}
+
 func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	var req registerRequest
 
 	if err := decodeJSON(w, r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+		writeError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 

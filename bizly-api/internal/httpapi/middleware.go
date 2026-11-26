@@ -1,8 +1,12 @@
 package httpapi
 
 import (
+	"context"
 	"net/http"
+	"strings"
 	"time"
+
+	"bizly-api/internal/auth"
 )
 
 type statusRecorder struct {
@@ -10,6 +14,11 @@ type statusRecorder struct {
 	status int
 }
 
+type contextKey string
+
+const claimsKey contextKey = "claims"
+
+// allowed origin
 const allowedOrigin = "http://localhost:3000"
 
 func cors(next http.Handler) http.Handler {
@@ -32,6 +41,7 @@ func cors(next http.Handler) http.Handler {
 	})
 }
 
+// status logger
 func (rec *statusRecorder) WriteHeader(code int) {
 	rec.status = code
 	rec.ResponseWriter.WriteHeader(code)
@@ -46,4 +56,32 @@ func (s *Server) logRequests(next http.Handler) http.Handler {
 
 		s.logger.Info("request", "method", r.Method, "path", r.URL.Path, "status", rec.status, "duration", time.Since(start))
 	})
+}
+
+// auth validation
+func (s *Server) requireAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authorization := r.Header.Get("Authorization")
+		token, found := strings.CutPrefix(authorization, "Bearer ")
+		if !found || token == "" {
+			writeError(w, http.StatusUnauthorized, "Not authenticated")
+			return
+		}
+
+		claims, err := auth.ParseToken(token, s.jwtSecret)
+		if err != nil {
+			writeError(w, http.StatusUnauthorized, "Not authenticated")
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), claimsKey, claims)
+
+		next(w, r.WithContext(ctx))
+	}
+}
+
+func claimsFrom(r *http.Request) *auth.Claims {
+	claims, _ := r.Context().Value(claimsKey).(*auth.Claims)
+
+	return claims
 }
