@@ -14,6 +14,19 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+type updateClient struct {
+	Name   string `json:"name"`
+	Email  string `json:"email"`
+	Phone  string `json:"phone"`
+	Status string `json:"status"`
+}
+
+type createClient struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
+}
+
 // json tags: what the frontend reads; db tags: column names for pgx.RowToStructByName
 type clientResponse struct {
 	ID        string    `json:"id"         db:"id"`
@@ -24,10 +37,90 @@ type clientResponse struct {
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 }
 
-type createClient struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Phone string `json:"phone"`
+func (s *Server) handleUpdateClient(w http.ResponseWriter, r *http.Request) {
+	claims := claimsFrom(r)
+	if claims == nil {
+		writeError(w, http.StatusUnauthorized, "Not authenticated")
+		return
+	}
+
+	id := r.PathValue("id")
+
+	var req updateClient
+
+	if err := decodeJSON(w, r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid body request")
+		return
+	}
+
+	req.Name = strings.TrimSpace(req.Name)
+	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
+	req.Phone = strings.TrimSpace(req.Phone)
+
+	if req.Name == "" {
+		writeError(w, http.StatusBadRequest, "Name cannot be empty")
+		return
+	}
+
+	if utf8.RuneCountInString(req.Name) > 120 {
+		writeError(w, http.StatusBadRequest, "Please, insert a shorter name")
+		return
+	}
+
+	if req.Email != "" {
+		if addr, err := mail.ParseAddress(req.Email); err != nil || addr.Address != req.Email {
+			writeError(w, http.StatusBadRequest, "Invalid email")
+			return
+		}
+	}
+
+	if req.Status != "ACTIVE" && req.Status != "INACTIVE" {
+		writeError(w, http.StatusBadRequest, "Invalid body request")
+		return
+	}
+
+	ctx := r.Context()
+	var updated clientResponse
+
+	err := database.WithTenant(ctx, s.db, claims.CompanyID, func(tx pgx.Tx) error {
+		rows, err := tx.Query(ctx, `
+			UPDATE customers SET name = $1, email = $2, phone = $3, status = $4
+				WHERE id = $5
+				RETURNING id, name, email, phone, status, created_at
+		`, req.Name, nullIfEmpty(req.Email), nullIfEmpty(req.Phone), req.Status, id)
+		if err != nil {
+			return err
+		}
+
+		updated, err = pgx.CollectOneRow(rows, pgx.RowToStructByName[clientResponse])
+		return err
+	})
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		writeError(w, http.StatusNotFound, "Client not found")
+		return
+	}
+
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		switch pgErr.Code {
+		case "22P02":
+			writeError(w, http.StatusNotFound, "Client not found")
+			return
+
+		case "23505":
+			writeError(w, http.StatusBadRequest, "E-mail already registered")
+			return
+		}
+	}
+
+	if err != nil {
+		s.logger.Error("update client", "err", err)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, updated)
 }
 
 func (s *Server) handleCreateClient(w http.ResponseWriter, r *http.Request) {
