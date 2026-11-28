@@ -27,6 +27,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("POST /api/v1/auth/register", s.handleRegister)
 	mux.HandleFunc("GET /api/v1/auth/me", s.requireAuth(s.handleMe))
 	mux.HandleFunc("GET /api/v1/clients", s.requireAuth(s.handleListClients))
+	mux.HandleFunc("POST /api/v1/clients", s.requireAuth(s.handleCreateClient))
 	return s.logRequests(cors(mux))
 }
 
