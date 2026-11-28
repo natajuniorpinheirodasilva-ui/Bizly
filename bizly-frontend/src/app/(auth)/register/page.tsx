@@ -201,8 +201,8 @@ export default function Register() {
                             type="submit"
                             disabled={isLoading}
                             className={isLoading
-                                ? "mt-2 cursor-not-allowed opacity-70 rounded-lg bg-primary py-3.5 text-base font-semibold text-white transition-colors"
-                                : "mt-2 cursor-pointer rounded-lg bg-primary py-3.5 text-base font-semibold text-white transition-colors hover:bg-primary-hover hover:scale-101 transition-all duration-300"}                        >
+                                ? "mt-2 cursor-not-allowed opacity-70 rounded-lg bg-primary py-3.5 text-base font-semibold text-white transition-all duration-300"
+                                : "mt-2 cursor-pointer rounded-lg bg-primary py-3.5 text-base font-semibold text-white hover:bg-primary-hover hover:scale-101 transition-all duration-300"}                        >
                             {isLoading ? "CREATING..." : "CREATE ACCOUNT"}
                         </button>
                     </form>
