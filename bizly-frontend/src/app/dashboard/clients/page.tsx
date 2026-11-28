@@ -9,8 +9,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 type Client = {
     id: string
     name: string
-    email: string
-    phone: string
+    email: string | null
+    phone: string | null
     status: string
     created_at: string
 }
@@ -56,7 +56,7 @@ export default function ClientsPage() {
 
     const filteredClients = clients.filter(client =>
         client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client.email.toLowerCase().includes(searchQuery.toLowerCase())
+        (client.email ?? "").toLowerCase().includes(searchQuery.toLowerCase())
     )
 
     async function handleAddClient(e: React.FormEvent) {
@@ -91,8 +91,8 @@ export default function ClientsPage() {
         setEditingClientId(client.id)
         setEditFormData({
             name: client.name,
-            email: client.email,
-            phone: client.phone,
+            email: client.email ?? "",
+            phone: client.phone ?? "",
             status: client.status
         })
     }
@@ -100,8 +100,8 @@ export default function ClientsPage() {
     async function saveEdit(id: string, client: Client) {
         const hasChanged =
             editFormData.name !== client.name ||
-            editFormData.email !== client.email ||
-            editFormData.phone !== client.phone ||
+            editFormData.email !== (client.email ?? "") ||
+            editFormData.phone !== (client.phone ?? "") ||
             editFormData.status !== client.status
 
         if (!hasChanged) {
@@ -338,7 +338,7 @@ export default function ClientsPage() {
                                                 </select>
                                             </td>
                                             <td className="px-6 py-4 text-foreground-muted">
-                                                {client.created_at}
+                                                {new Date(client.created_at).toLocaleDateString()}
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex justify-end gap-2">
@@ -377,7 +377,7 @@ export default function ClientsPage() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-foreground-muted">
-                                                {client.created_at}
+                                                {new Date(client.created_at).toLocaleDateString()}
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <DropdownMenu>
