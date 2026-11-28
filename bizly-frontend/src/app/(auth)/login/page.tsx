@@ -20,7 +20,7 @@ export default function Login() {
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [rememberMe, setRememberMe] = useState<boolean>(false)
 
-    async function handleSubmit(e: React.FormEvent) {
+    async function handleLogin(e: React.FormEvent) {
         e.preventDefault()
         if (!email.trim() || !password.trim()) {
             toast.error("Invalid credentials")
@@ -83,7 +83,7 @@ export default function Login() {
                     </h1>
 
                     <form
-                        onSubmit={handleSubmit}
+                        onSubmit={handleLogin}
                         className="flex flex-col gap-5"
                     >
                         <div className="flex flex-col gap-2">

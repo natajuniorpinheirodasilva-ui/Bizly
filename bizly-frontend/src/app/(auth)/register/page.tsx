@@ -22,11 +22,21 @@ export default function Register() {
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [success, setSuccess] = useState<boolean>(false)
 
-    async function handleSubmit(e: React.FormEvent) {
+    async function handleRegister(e: React.FormEvent) {
         e.preventDefault()
 
         if (!companyName.trim() || !name.trim() || !email.trim() || !password.trim()) {
             toast.error("Invalid credentials.")
+            return
+        }
+
+        if (password.length < 8) {
+            toast.error("Please, insert a longer password")
+            return
+        }
+
+        if (password.length > 72) {
+            toast.error("Please, insert a shorter password")
             return
         }
 
@@ -86,7 +96,7 @@ export default function Register() {
                     )}
 
                     <form
-                        onSubmit={handleSubmit}
+                        onSubmit={handleRegister}
                         className="flex flex-col gap-5"
                     >
                         <div className="flex flex-col gap-2">
